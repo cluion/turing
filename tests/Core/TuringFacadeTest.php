@@ -11,7 +11,9 @@ use Cluion\Turing\Core\Config;
 use Cluion\Turing\Core\Exception\AlreadyUsed;
 use Cluion\Turing\Core\Exception\ChallengeMismatch;
 use Cluion\Turing\Core\Exception\TokenExpired;
+use Cluion\Turing\Core\Exception\UnknownType;
 use Cluion\Turing\Core\KeyRing;
+use Cluion\Turing\Core\Pow\Pbkdf2Solver;
 use Cluion\Turing\Core\Store\NullStore;
 use Cluion\Turing\Core\Store\Store;
 use Cluion\Turing\Core\Token\HmacSigner;
@@ -126,5 +128,39 @@ final class TuringFacadeTest extends TestCase
         self::assertTrue($turing->verify($packed)); // first use consumes the nonce
         $this->expectException(AlreadyUsed::class);
         $turing->verify($packed);                   // replay
+    }
+
+    /**
+     * A PoW challenge round-trips: brute-force the counter, then verify passes.
+     */
+    public function test_pow_full_round_trip(): void
+    {
+        $now = fn() => 1000;
+        $turing = $this->facade(new NullStore(), $now);
+        $ch = $turing->challenge('pow');
+        self::assertSame('pow', $ch->type);
+
+        // Simulate the client: find the counter the server's keySignature targets.
+        $solver = new Pbkdf2Solver();
+        $counter = null;
+        for ($c = 1; $c <= 100; $c++) {
+            if ($solver->verify($ch->params, $c)) {
+                $counter = $c;
+                break;
+            }
+        }
+        self::assertNotNull($counter, 'client should find a counter within maxcounter');
+        self::assertTrue($turing->verify($this->pack($ch->token, (string) $counter)));
+    }
+
+    /**
+     * Requesting an unregistered challenge type raises UnknownType.
+     */
+    public function test_challenge_unknown_type_throws(): void
+    {
+        $now = fn() => 1000;
+        $turing = $this->facade(new NullStore(), $now);
+        $this->expectException(UnknownType::class);
+        $turing->challenge('bogus');
     }
 }

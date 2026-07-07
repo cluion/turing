@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace Cluion\Turing\Tests\Core\Challenge;
 
 use Cluion\Turing\Core\Challenge\PowType;
+use Cluion\Turing\Core\Exception\PowAlgorithmUnsupported;
 use Cluion\Turing\Core\KeyRing;
 use Cluion\Turing\Core\Pow\Pbkdf2Solver;
+use Cluion\Turing\Core\Pow\ShaBitSolver;
 use Cluion\Turing\Core\Token\HmacSigner;
 use Cluion\Turing\Core\Token\TokenEncoder;
 use PHPUnit\Framework\TestCase;
@@ -58,5 +60,51 @@ final class PowTypeTest extends TestCase
             ['salt' => $salt, 'nonce' => $nonce, 'cost' => $cost, 'keySignature' => $sig],
             $good
         ));
+    }
+
+    /**
+     * The SHA-256 (hashcash) algorithm issues difficulty_bits params, no image.
+     */
+    public function test_issue_shabit_returns_difficulty(): void
+    {
+        $type = new PowType();
+        $ch = $type->issue(
+            ['algorithm' => 'SHA-256', 'difficulty_bits' => 12, 'expire' => 120],
+            $this->ring(),
+            now: 1000
+        );
+        self::assertNull($ch->image);
+        self::assertSame('SHA-256', $ch->params['algorithm']);
+        self::assertSame(12, $ch->params['difficulty_bits']);
+    }
+
+    /**
+     * solverFor returns the matching solver for each supported algorithm.
+     */
+    public function test_solver_for_returns_matching_solver(): void
+    {
+        $type = new PowType();
+        self::assertInstanceOf(Pbkdf2Solver::class, $type->solverFor('PBKDF2-SHA256'));
+        self::assertInstanceOf(ShaBitSolver::class, $type->solverFor('SHA-256'));
+    }
+
+    /**
+     * An unknown algorithm is rejected on both issue and solverFor.
+     */
+    public function test_unknown_algorithm_throws(): void
+    {
+        $type = new PowType();
+        $this->expectException(PowAlgorithmUnsupported::class);
+        $type->solverFor('bogus');
+    }
+
+    /**
+     * issue() with an unknown algorithm also raises PowAlgorithmUnsupported.
+     */
+    public function test_issue_unknown_algorithm_throws(): void
+    {
+        $type = new PowType();
+        $this->expectException(PowAlgorithmUnsupported::class);
+        $type->issue(['algorithm' => 'bogus'], $this->ring(), now: 1000);
     }
 }
