@@ -1,0 +1,14 @@
+{
+  "description": "HMAC-SHA256 token round-trip. A port must produce this identical compact token from the same secret and payload (canonical JSON, sorted keys).",
+  "secret": "vector-secret",
+  "payload": {
+    "v": 1,
+    "type": "math",
+    "kid": "k1",
+    "nonce": "vgvectorsnonce000",
+    "iat": 1000,
+    "exp": 1120,
+    "data": { "ah": "demo" }
+  },
+  "expectedCompact": "eyJkYXRhIjp7ImFoIjoiZGVtbyJ9LCJleHAiOjExMjAsImlhdCI6MTAwMCwia2lkIjoiazEiLCJub25jZSI6InZndmVjdG9yc25vbmNlMDAwIiwidHlwZSI6Im1hdGgiLCJ2IjoxfQ.hrkMQ2BPWAI3Z8fJp8XbsSLUtWfoVd0jI5hJDXTXJgo"
+}

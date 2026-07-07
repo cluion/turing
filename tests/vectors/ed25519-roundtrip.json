@@ -1,0 +1,16 @@
+{
+  "description": "Ed25519 token round-trip (opt-in, ext-sodium). Keypair derived from a fixed 32-byte seed (all 0x01). Ed25519 signatures are deterministic, so the compact token is stable. Detached signature over the canonical JSON payload.",
+  "enabled": true,
+  "seedHex": "0101010101010101010101010101010101010101010101010101010101010101",
+  "publicKeyHex": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+  "payload": {
+    "v": 1,
+    "type": "pow",
+    "kid": "ed",
+    "nonce": "n",
+    "iat": 1,
+    "exp": 2,
+    "data": { "ah": "demo" }
+  },
+  "expectedCompact": "eyJkYXRhIjp7ImFoIjoiZGVtbyJ9LCJleHAiOjIsImlhdCI6MSwia2lkIjoiZWQiLCJub25jZSI6Im4iLCJ0eXBlIjoicG93IiwidiI6MX0.JAFWow6q2xYjk1t0iiBRG5_UXj7mXCm_SA-OMgvKlqGYhd2MWyqifkz0-e_GJF8X_xO1ht40SF7uvlFCeR9SDQ"
+}

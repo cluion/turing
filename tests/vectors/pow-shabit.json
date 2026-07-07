@@ -1,0 +1,5 @@
+{
+  "description": "SHA-256 leading-zero-bit (hashcash-style) PoW. A port must reproduce identical leading-zero-bit counting of SHA-256(salt . counter).",
+  "challenge": { "algorithm": "SHA-256", "salt": "vsalt", "difficulty_bits": 4 },
+  "correctCounter": 0
+}
