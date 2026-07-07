@@ -5,28 +5,21 @@ namespace Cluion\Turing\Core\Challenge;
 
 use Cluion\Turing\Core\Exception\PowAlgorithmUnsupported;
 use Cluion\Turing\Core\KeyRing;
-use Cluion\Turing\Core\Pow\EffortMode;
 use Cluion\Turing\Core\Pow\Pbkdf2Solver;
 use Cluion\Turing\Core\Pow\PowSolver;
 use Cluion\Turing\Core\Pow\ShaBitSolver;
-use Cluion\Turing\Core\Token\Payload;
-use Cluion\Turing\Core\Token\Token;
 use Cluion\Turing\Core\Token\TokenEncoder;
 
 /**
- * PoW challenge type. Default: PBKDF2-SHA256, Deterministic effort (the server
- * picks a target counter and embeds keySignature). The client brute-forces it;
- * the server verifies with a single KDF run. SHA-256 bit mode is opt-in.
+ * PoW challenge type. PBKDF2-SHA256 (Deterministic: the server picks a target
+ * counter and embeds keySignature; the client brute-forces it and the server
+ * verifies with a single KDF run) or SHA-256 leading-zero-bit (opt-in). A true
+ * probabilistic PBKDF2 mode is not implemented, so no effort-mode toggle is
+ * advertised - the algorithm choice alone determines the difficulty style.
  */
 final class PowType implements ChallengeType
 {
-    /**
-     * Fix the effort mode advertised in the challenge params.
-     */
-    public function __construct(
-        private readonly EffortMode $mode = EffortMode::Deterministic,
-    ) {
-    }
+    use IssuesChallenge;
 
     /**
      * Return the wire name of this challenge type.
@@ -47,28 +40,22 @@ final class PowType implements ChallengeType
         $nonce = TokenEncoder::base64UrlEncode(random_bytes(16));
         $expire = $typeConfig['expire'] ?? 120;
 
+        // Note: $nonce here is the KDF nonce embedded in params; the token's
+        // single-use nonce is generated separately inside signChallenge().
         $params = match ($algorithm) {
             'PBKDF2-SHA256' => $this->buildPbkdf2($salt, $nonce, $typeConfig),
             'SHA-256' => $this->buildShaBit($salt, $typeConfig),
             default => throw new PowAlgorithmUnsupported("Unknown PoW algorithm: $algorithm"),
         };
 
-        $payload = new Payload(
+        return $this->signChallenge(
             type: $this->name(),
-            kid: $ring->defaultKid(),
-            nonce: TokenEncoder::base64UrlEncode(random_bytes(16)),
-            iat: $now,
-            exp: $now + $expire,
             data: $params,
-        );
-        $token = (string) Token::sign($payload, $ring->signer());
-
-        return new Challenge(
-            token: $token,
+            ring: $ring,
+            now: $now,
+            expire: $expire,
             image: null,
             params: $params,
-            type: $this->name(),
-            expires: $now + $expire,
         );
     }
 
@@ -88,7 +75,6 @@ final class PowType implements ChallengeType
         );
         return [
             'algorithm' => 'PBKDF2-SHA256',
-            'mode' => $this->mode->value,
             'salt' => $salt,
             'nonce' => $nonce,
             'cost' => $cost,
@@ -103,7 +89,6 @@ final class PowType implements ChallengeType
     {
         return [
             'algorithm' => 'SHA-256',
-            'mode' => $this->mode->value,
             'salt' => $salt,
             'difficulty_bits' => (int) ($cfg['difficulty_bits'] ?? 20),
         ];

@@ -9,8 +9,8 @@ use Cluion\Turing\Core\Challenge\TextType;
 use Cluion\Turing\Core\Charset\DefaultCharset;
 use Cluion\Turing\Core\Config;
 use Cluion\Turing\Core\Exception\AlreadyUsed;
-use Cluion\Turing\Core\Exception\ChallengeMismatch;
 use Cluion\Turing\Core\Exception\TokenExpired;
+use Cluion\Turing\Core\Exception\TokenInvalid;
 use Cluion\Turing\Core\Exception\UnknownType;
 use Cluion\Turing\Core\KeyRing;
 use Cluion\Turing\Core\Pow\Pbkdf2Solver;
@@ -71,15 +71,14 @@ final class TuringFacadeTest extends TestCase
     }
 
     /**
-     * A wrong math answer raises ChallengeMismatch.
+     * A wrong math answer returns false (not an exception).
      */
-    public function test_math_wrong_answer_throws_mismatch(): void
+    public function test_math_wrong_answer_returns_false(): void
     {
         $now = fn() => 1000;
         $turing = $this->facade(new NullStore(), $now, ['a' => 2, 'b' => 3, 'op' => '+']);
         $ch = $turing->challenge('math');
-        $this->expectException(ChallengeMismatch::class);
-        $turing->verify($this->pack($ch->token, '9'));
+        self::assertFalse($turing->verify($this->pack($ch->token, '9')));
     }
 
     /**
@@ -162,5 +161,40 @@ final class TuringFacadeTest extends TestCase
         $turing = $this->facade(new NullStore(), $now);
         $this->expectException(UnknownType::class);
         $turing->challenge('bogus');
+    }
+
+    /**
+     * After key rotation, a token signed under an older kid still verifies
+     * because the facade selects the signer by the token's kid.
+     */
+    public function test_verify_selects_signer_by_kid_after_rotation(): void
+    {
+        $now = fn() => 1000;
+        $config = new Config(defaultType: 'math', types: ['math' => ['expire' => 120]], now: $now);
+        $types = ['math' => new MathType(pepper: 'pepper', fixedForTest: ['a' => 2, 'b' => 3, 'op' => '+'])];
+
+        // Old ring signs under k1.
+        $oldRing = (new KeyRing('k1'))->add('k1', new HmacSigner('secret-k1'));
+        $ch = (new Turing($oldRing, new NullStore(), $config, $types))->challenge('math');
+
+        // After rotation: default is k2, but k1 stays on the ring for in-flight tokens.
+        $newRing = (new KeyRing('k2'))
+            ->add('k2', new HmacSigner('secret-k2'))
+            ->add('k1', new HmacSigner('secret-k1'));
+        $newTuring = new Turing($newRing, new NullStore(), $config, $types);
+
+        self::assertTrue($newTuring->verify($this->pack($ch->token, '5')));
+    }
+
+    /**
+     * A malformed packed token surfaces as a TuringException (TokenInvalid),
+     * not a raw InvalidArgumentException/JsonException.
+     */
+    public function test_malformed_packed_token_throws_token_invalid(): void
+    {
+        $now = fn() => 1000;
+        $turing = $this->facade(new NullStore(), $now);
+        $this->expectException(TokenInvalid::class);
+        $turing->verify('@@@not-valid@@@');
     }
 }

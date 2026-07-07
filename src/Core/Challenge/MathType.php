@@ -6,9 +6,6 @@ namespace Cluion\Turing\Core\Challenge;
 use Cluion\Turing\Core\Image\ImageRenderer;
 use Cluion\Turing\Core\Image\SvgRenderer;
 use Cluion\Turing\Core\KeyRing;
-use Cluion\Turing\Core\Token\Payload;
-use Cluion\Turing\Core\Token\Token;
-use Cluion\Turing\Core\Token\TokenEncoder;
 
 /**
  * Math captcha: shows "a op b" as an image; the answer is the numeric result.
@@ -17,6 +14,7 @@ use Cluion\Turing\Core\Token\TokenEncoder;
 final class MathType implements ChallengeType, AnswerVerifier
 {
     use AnswerHash;
+    use IssuesChallenge;
 
     /**
      * $fixedForTest pins a/b/op for deterministic tests; null means random.
@@ -50,23 +48,14 @@ final class MathType implements ChallengeType, AnswerVerifier
         $image = $this->renderer->render("$a $op $b");
         $ah = $this->hashAnswer((string) $answer);
 
-        $expire = $typeConfig['expire'] ?? 120;
-        $payload = new Payload(
+        return $this->signChallenge(
             type: $this->name(),
-            kid: $ring->defaultKid(),
-            nonce: TokenEncoder::base64UrlEncode(random_bytes(16)),
-            iat: $now,
-            exp: $now + $expire,
             data: ['ah' => $ah],
-        );
-        $token = (string) Token::sign($payload, $ring->signer());
-
-        return new Challenge(
-            token: $token,
+            ring: $ring,
+            now: $now,
+            expire: $typeConfig['expire'] ?? 120,
             image: $image,
             params: null,
-            type: $this->name(),
-            expires: $now + $expire,
         );
     }
 }

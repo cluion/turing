@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Cluion\Turing\Core\Token;
 
-use Cluion\Turing\Core\Exception\PowAlgorithmUnsupported;
+use Cluion\Turing\Core\Exception\ExtensionUnavailable;
 
 /**
  * Asymmetric Ed25519 signer via ext-sodium. Opt-in: lets multiple servers
@@ -19,7 +19,7 @@ final class Ed25519Signer implements Signer
         private readonly string $publicKey,
     ) {
         if (!function_exists('sodium_crypto_sign')) {
-            throw new PowAlgorithmUnsupported('ext-sodium is required for Ed25519.');
+            throw new ExtensionUnavailable('ext-sodium is required for Ed25519.');
         }
     }
 

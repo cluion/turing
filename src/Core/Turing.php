@@ -8,18 +8,19 @@ use Cluion\Turing\Core\Challenge\Challenge;
 use Cluion\Turing\Core\Challenge\ChallengeType;
 use Cluion\Turing\Core\Challenge\PowType;
 use Cluion\Turing\Core\Exception\AlreadyUsed;
-use Cluion\Turing\Core\Exception\ChallengeMismatch;
 use Cluion\Turing\Core\Exception\TokenExpired;
+use Cluion\Turing\Core\Exception\TokenInvalid;
 use Cluion\Turing\Core\Exception\UnknownType;
 use Cluion\Turing\Core\Store\Store;
 use Cluion\Turing\Core\Token\Payload;
+use Cluion\Turing\Core\Token\Signer;
 use Cluion\Turing\Core\Token\Token;
 use Cluion\Turing\Core\Token\TokenEncoder;
 
 /**
  * Top-level Core facade. Framework integration layers wrap this. verify()
- * enforces signature -> expiry -> single-use -> answer/counter match, and
- * delegates the answer/counter check back to the challenge type.
+ * returns true/false for a right/wrong answer and throws a TuringException for
+ * a structurally invalid token (malformed, expired, replayed, unknown type).
  */
 final class Turing
 {
@@ -44,28 +45,35 @@ final class Turing
         $ct = $this->type($type);
         $cfg = $this->config->types[$type] ?? [];
         $ch = $ct->issue($cfg, $this->ring, ($this->config->now)());
-        $this->store->remember($this->nonceOf($ch->token), $cfg['expire'] ?? 120);
+        $this->store->remember($ch->nonce, $cfg['expire'] ?? 120);
         return $ch;
     }
 
     /**
-     * Verify a packed {t, a} field: decode, check expiry, consume the nonce,
-     * then dispatch to the type's answer or PoW check. Returns true on success.
+     * Verify a packed {t, a} field. Returns true on a correct answer/counter,
+     * false on a wrong one. Throws TokenInvalid/TokenExpired/AlreadyUsed/
+     * SignatureInvalid/UnknownType for a structurally invalid submission.
      */
     public function verify(string $packedToken, ?string $answer = null): bool
     {
-        $unpacked = json_decode(TokenEncoder::base64UrlDecode($packedToken), true, 512, JSON_THROW_ON_ERROR);
-        $token = $unpacked['t'] ?? '';
+        try {
+            $unpacked = json_decode(TokenEncoder::base64UrlDecode($packedToken), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\InvalidArgumentException | \JsonException $e) {
+            throw new TokenInvalid('Packed token is not valid base64url JSON.', 0, $e);
+        }
+        if (!is_array($unpacked)) {
+            throw new TokenInvalid('Packed token must decode to an object.');
+        }
+        $token = (string) ($unpacked['t'] ?? '');
         $a = $answer ?? (string) ($unpacked['a'] ?? '');
 
-        // v1 uses a single kid, so the default signer verifies the token.
-        $payload = Token::decode($token, $this->ring->signer());
+        $payload = Token::decode($token, $this->signerForToken($token));
 
         if ($payload->exp <= ($this->config->now)()) {
             throw new TokenExpired('Token has expired.');
         }
         // Consume before comparing: a wrong answer still burns the nonce. This
-        // is an accepted v1 tradeoff (mild DoS surface) for a simple ordering.
+        // is an accepted tradeoff (mild DoS surface) for a simple ordering.
         if (!$this->store->consume($payload->nonce)) {
             throw new AlreadyUsed('Challenge already used or unknown.');
         }
@@ -86,16 +94,31 @@ final class Turing
     }
 
     /**
-     * Decode a freshly signed token just to read its nonce.
+     * Select the signer by peeking the token's (unverified) kid, so KeyRing
+     * rotation works: a token signed under an older kid still verifies while a
+     * new kid signs fresh ones. Token::decode then verifies with the chosen
+     * signer, so a tampered kid merely fails verification. Falls back to the
+     * default signer when the kid cannot be read or is unknown.
      */
-    private function nonceOf(string $token): string
+    private function signerForToken(string $compact): Signer
     {
-        return Token::decode($token, $this->ring->signer())->nonce;
+        $parts = explode('.', $compact);
+        if (count($parts) === 2) {
+            try {
+                $data = json_decode(TokenEncoder::base64UrlDecode($parts[0]), true);
+                if (is_array($data) && isset($data['kid']) && is_string($data['kid'])) {
+                    return $this->ring->signer($data['kid']);
+                }
+            } catch (\Throwable) {
+                // Fall through: Token::decode surfaces the real error next.
+            }
+        }
+        return $this->ring->signer();
     }
 
     /**
-     * Delegate answer checking to the type (which owns the pepper), throwing
-     * ChallengeMismatch on a wrong answer.
+     * Delegate the answer check to the type, which owns the pepper. Returns
+     * false on a wrong answer (not an exception).
      */
     private function checkAnswer(Payload $p, string $answer): bool
     {
@@ -103,15 +126,12 @@ final class Turing
         if (!$type instanceof AnswerVerifier) {
             throw new UnknownType("Type {$p->type} cannot verify answers.");
         }
-        if ($type->verifyAgainst($answer, (string) ($p->data['ah'] ?? ''))) {
-            return true;
-        }
-        throw new ChallengeMismatch('Answer does not match.');
+        return $type->verifyAgainst($answer, (string) ($p->data['ah'] ?? ''));
     }
 
     /**
-     * Resolve the PoW solver for the token's algorithm and verify the counter,
-     * throwing ChallengeMismatch when it does not satisfy the challenge.
+     * Resolve the PoW solver for the token's algorithm and verify the counter.
+     * Returns false when it does not satisfy the challenge (not an exception).
      */
     private function checkPow(Payload $p, int $counter): bool
     {
@@ -119,10 +139,6 @@ final class Turing
         if (!$pow instanceof PowType) {
             throw new UnknownType('PoW type is not registered as PowType.');
         }
-        $solver = $pow->solverFor((string) ($p->data['algorithm'] ?? ''));
-        if ($solver->verify($p->data, $counter)) {
-            return true;
-        }
-        throw new ChallengeMismatch('PoW counter does not satisfy the challenge.');
+        return $pow->solverFor((string) ($p->data['algorithm'] ?? ''))->verify($p->data, $counter);
     }
 }
