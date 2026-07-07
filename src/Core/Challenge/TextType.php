@@ -15,7 +15,7 @@ use Cluion\Turing\Core\Token\TokenEncoder;
  * Text captcha: renders a random charset string as an image; the answer is the
  * string itself (case-insensitive). Stored as a peppered HMAC, never cleartext.
  */
-final class TextType implements ChallengeType
+final class TextType implements ChallengeType, AnswerVerifier
 {
     use AnswerHash;
 

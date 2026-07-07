@@ -14,7 +14,7 @@ use Cluion\Turing\Core\Token\TokenEncoder;
  * Math captcha: shows "a op b" as an image; the answer is the numeric result.
  * The answer is stored in the token as a peppered HMAC, never in cleartext.
  */
-final class MathType implements ChallengeType
+final class MathType implements ChallengeType, AnswerVerifier
 {
     use AnswerHash;
 
