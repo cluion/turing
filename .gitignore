@@ -1,0 +1,6 @@
+/spec/
+/plan/
+/vendor/
+/.phpunit.cache/
+/coverage/
+composer.lock
