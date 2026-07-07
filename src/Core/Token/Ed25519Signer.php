@@ -11,6 +11,9 @@ use Cluion\Turing\Core\Exception\PowAlgorithmUnsupported;
  */
 final class Ed25519Signer implements Signer
 {
+    /**
+     * Hold the keypair and fail fast if ext-sodium is unavailable.
+     */
     public function __construct(
         private readonly string $secretKey,
         private readonly string $publicKey,
@@ -20,19 +23,28 @@ final class Ed25519Signer implements Signer
         }
     }
 
+    /**
+     * Produce a detached 64-byte signature, matching the Signer contract
+     * (raw signature bytes) and the token's two-segment layout. Using
+     * sodium_crypto_sign() would prepend the message and double the payload
+     * at verify time.
+     */
     public function sign(string $payload): string
     {
-        // Detached: return only the 64-byte signature, matching the Signer
-        // contract (raw signature bytes) and the token's two-segment layout.
         return sodium_crypto_sign_detached($payload, $this->secretKey);
     }
 
+    /**
+     * Verify a detached signature; false on any tamper or key mismatch.
+     */
     public function verify(string $payload, string $signature): bool
     {
-        // Returns false on any tamper or key mismatch.
         return sodium_crypto_sign_verify_detached($signature, $payload, $this->publicKey);
     }
 
+    /**
+     * Return the JWS-style algorithm id.
+     */
     public function algorithm(): string
     {
         return 'EdDSA';

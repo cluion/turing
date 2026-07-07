@@ -9,6 +9,9 @@ namespace Cluion\Turing\Core\Token;
  */
 final readonly class Payload
 {
+    /**
+     * Version defaults to 1 (the current wire version).
+     */
     public function __construct(
         public string $type,
         public string $kid,
@@ -20,7 +23,9 @@ final readonly class Payload
     ) {
     }
 
-    /** Ordered associative form fed to canonical JSON encoding. */
+    /**
+     * Ordered associative form fed to canonical JSON encoding.
+     */
     public function toArray(): array
     {
         return [
@@ -34,7 +39,9 @@ final readonly class Payload
         ];
     }
 
-    /** Rebuild a Payload from a decoded array, defaulting version to 1. */
+    /**
+     * Rebuild a Payload from a decoded array, defaulting version to 1.
+     */
     public static function fromArray(array $a): self
     {
         return new self(

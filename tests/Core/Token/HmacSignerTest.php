@@ -8,7 +8,9 @@ use PHPUnit\Framework\TestCase;
 
 final class HmacSignerTest extends TestCase
 {
-    /** A signature produced by sign() verifies against the same payload. */
+    /**
+     * A signature produced by sign() verifies against the same payload.
+     */
     public function test_sign_then_verify_round_trips(): void
     {
         $signer = new HmacSigner('super-secret');
@@ -16,7 +18,9 @@ final class HmacSignerTest extends TestCase
         self::assertTrue($signer->verify('{"a":1}', $sig));
     }
 
-    /** A signature does not verify against a tampered payload. */
+    /**
+     * A signature does not verify against a tampered payload.
+     */
     public function test_verify_rejects_tampered_payload(): void
     {
         $signer = new HmacSigner('super-secret');
@@ -24,7 +28,9 @@ final class HmacSignerTest extends TestCase
         self::assertFalse($signer->verify('{"a":2}', $sig));
     }
 
-    /** Algorithm id is the JWS-style HS256. */
+    /**
+     * Algorithm id is the JWS-style HS256.
+     */
     public function test_algorithm_is_hs256(): void
     {
         self::assertSame('HS256', (new HmacSigner('k'))->algorithm());

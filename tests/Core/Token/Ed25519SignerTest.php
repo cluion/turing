@@ -8,15 +8,19 @@ use PHPUnit\Framework\TestCase;
 
 final class Ed25519SignerTest extends TestCase
 {
+    /**
+     * Ed25519 is opt-in; skip the whole case when ext-sodium is absent.
+     */
     protected function setUp(): void
     {
-        // Ed25519 is opt-in; skip the whole case when ext-sodium is absent.
         if (!function_exists('sodium_crypto_sign_keypair')) {
             self::markTestSkipped('ext-sodium not available; Ed25519 is opt-in.');
         }
     }
 
-    /** A detached-style signature verifies against its payload. */
+    /**
+     * A detached signature verifies against its payload.
+     */
     public function test_sign_then_verify_round_trips(): void
     {
         $kp = sodium_crypto_sign_keypair();
@@ -27,7 +31,9 @@ final class Ed25519SignerTest extends TestCase
         self::assertTrue($signer->verify('{"a":1}', $sig));
     }
 
-    /** Algorithm id is the JWS-style EdDSA. */
+    /**
+     * Algorithm id is the JWS-style EdDSA.
+     */
     public function test_algorithm_is_eddsa(): void
     {
         $kp = sodium_crypto_sign_keypair();

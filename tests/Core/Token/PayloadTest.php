@@ -8,7 +8,9 @@ use PHPUnit\Framework\TestCase;
 
 final class PayloadTest extends TestCase
 {
-    /** toArray then fromArray preserves every field. */
+    /**
+     * toArray then fromArray preserves every field.
+     */
     public function test_round_trip_preserves_fields(): void
     {
         $p = new Payload(type: 'math', kid: 'k1', nonce: 'n', iat: 1000, exp: 1120, data: ['ah' => 'x']);
@@ -19,7 +21,9 @@ final class PayloadTest extends TestCase
         self::assertSame(['ah' => 'x'], $again->data);
     }
 
-    /** Version defaults to 1 when the array omits it. */
+    /**
+     * Version defaults to 1 when the array omits it.
+     */
     public function test_from_array_defaults_version_to_one(): void
     {
         $p = Payload::fromArray(['type' => 'pow', 'kid' => 'k', 'nonce' => 'n', 'iat' => 1, 'exp' => 2, 'data' => []]);

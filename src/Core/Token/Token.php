@@ -12,6 +12,9 @@ use Cluion\Turing\Core\Exception\TokenInvalid;
  */
 final class Token
 {
+    /**
+     * Private: build instances via sign(); keep the raw JSON for the signature.
+     */
     private function __construct(
         public readonly Payload $payload,
         public readonly string $payloadJson,
@@ -19,14 +22,18 @@ final class Token
     ) {
     }
 
-    /** Build a signed token from a payload and signer. */
+    /**
+     * Build a signed token from a payload and signer.
+     */
     public static function sign(Payload $payload, Signer $signer): self
     {
         $json = TokenEncoder::canonicalJson($payload->toArray());
         return new self($payload, $json, $signer->sign($json));
     }
 
-    /** Serialize to the compact two-segment string form. */
+    /**
+     * Serialize to the compact two-segment string form.
+     */
     public function __toString(): string
     {
         return TokenEncoder::base64UrlEncode($this->payloadJson)

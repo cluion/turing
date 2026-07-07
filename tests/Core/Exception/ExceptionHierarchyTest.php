@@ -28,7 +28,9 @@ final class ExceptionHierarchyTest extends TestCase
         self::assertInstanceOf(\RuntimeException::class, $e);
     }
 
-    /** @return list<array{class-string}> */
+    /**
+     * @return list<array{class-string}>
+     */
     public static function exceptions(): array
     {
         return [

@@ -15,24 +15,33 @@ final class KeyRing
     /** @var array<string, Signer> */
     private array $signers = [];
 
+    /**
+     * Fix the kid used when signing fresh tokens.
+     */
     public function __construct(private readonly string $defaultKid)
     {
     }
 
-    /** Register a signer under a key id; returns $this for chaining. */
+    /**
+     * Register a signer under a key id; returns $this for chaining.
+     */
     public function add(string $kid, Signer $signer): self
     {
         $this->signers[$kid] = $signer;
         return $this;
     }
 
-    /** The kid used when signing fresh tokens. */
+    /**
+     * Return the kid used when signing fresh tokens.
+     */
     public function defaultKid(): string
     {
         return $this->defaultKid;
     }
 
-    /** Resolve a signer by kid, defaulting to the ring's default kid. */
+    /**
+     * Resolve a signer by kid, defaulting to the ring's default kid.
+     */
     public function signer(?string $kid = null): Signer
     {
         $kid ??= $this->defaultKid;

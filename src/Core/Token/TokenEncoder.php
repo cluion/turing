@@ -9,13 +9,17 @@ namespace Cluion\Turing\Core\Token;
  */
 final class TokenEncoder
 {
-    /** Encode raw bytes as URL-safe base64 without padding. */
+    /**
+     * Encode raw bytes as URL-safe base64 without padding.
+     */
     public static function base64UrlEncode(string $bin): string
     {
         return rtrim(strtr(base64_encode($bin), '+/', '-_'), '=');
     }
 
-    /** Decode a URL-safe base64 string back to raw bytes. */
+    /**
+     * Decode a URL-safe base64 string back to raw bytes.
+     */
     public static function base64UrlDecode(string $s): string
     {
         // Restore the padding base64_decode() expects.
@@ -45,7 +49,9 @@ final class TokenEncoder
         return $json;
     }
 
-    /** Sort array keys in place, recursing into nested arrays. */
+    /**
+     * Sort array keys in place, recursing into nested arrays.
+     */
     private static function sortKeysRecursive(array &$data): void
     {
         ksort($data);

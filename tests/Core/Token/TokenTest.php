@@ -12,12 +12,17 @@ use PHPUnit\Framework\TestCase;
 
 final class TokenTest extends TestCase
 {
+    /**
+     * A fixed sample payload shared by the cases below.
+     */
     private function payload(): Payload
     {
         return new Payload(type: 'math', kid: 'k1', nonce: 'n', iat: 1000, exp: 1120, data: ['ah' => 'x']);
     }
 
-    /** Signing then decoding recovers the original payload fields. */
+    /**
+     * Signing then decoding recovers the original payload fields.
+     */
     public function test_round_trip_preserves_payload(): void
     {
         $signer = new HmacSigner('s');
@@ -25,14 +30,18 @@ final class TokenTest extends TestCase
         self::assertSame('k1', Token::decode($compact, $signer)->kid);
     }
 
-    /** A string without two segments is rejected as malformed. */
+    /**
+     * A string without two segments is rejected as malformed.
+     */
     public function test_decode_rejects_malformed_compact(): void
     {
         $this->expectException(TokenInvalid::class);
         Token::decode('not-a-token', new HmacSigner('s'));
     }
 
-    /** Flipping a signature byte is caught before the payload is trusted. */
+    /**
+     * Flipping a signature byte is caught before the payload is trusted.
+     */
     public function test_decode_rejects_bad_signature(): void
     {
         $signer = new HmacSigner('s');
