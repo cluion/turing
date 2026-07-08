@@ -5,9 +5,10 @@
          colors="true"
          cacheDirectory=".phpunit.cache">
   <source>
-    <include><directory>src</directory></include>
+    <include><directory>php/src</directory></include>
   </source>
   <testsuites>
-    <testsuite name="Core"><directory>tests/Core</directory></testsuite>
+    <testsuite name="Core"><directory>php/tests/Core</directory></testsuite>
+    <testsuite name="Laravel"><directory>php/tests/Laravel</directory></testsuite>
   </testsuites>
 </phpunit>

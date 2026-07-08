@@ -1,22 +1,36 @@
 {
     "name": "cluion/turing",
-    "description": "Self-hosted, zero-dependency, cross-language modern captcha. Core (framework-agnostic).",
+    "description": "Self-hosted, zero-dependency, cross-language modern captcha with a Laravel integration.",
     "license": "MIT",
     "type": "library",
     "require": {
         "php": ">=8.2",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "ext-hash": "*"
+        "ext-hash": "*",
+        "illuminate/support": "^11.0 || ^12.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^11.0"
+        "phpunit/phpunit": "^11.0",
+        "orchestra/testbench": "^10.0"
     },
     "autoload": {
-        "psr-4": { "Cluion\\Turing\\Core\\": "src/Core/" }
+        "psr-4": {
+            "Cluion\\Turing\\Core\\": "php/src/Core/",
+            "Cluion\\Turing\\Laravel\\": "php/src/Laravel/"
+        }
     },
     "autoload-dev": {
-        "psr-4": { "Cluion\\Turing\\Tests\\Core\\": "tests/Core/" }
+        "psr-4": {
+            "Cluion\\Turing\\Tests\\Core\\": "php/tests/Core/",
+            "Cluion\\Turing\\Tests\\Laravel\\": "php/tests/Laravel/"
+        }
     },
-    "config": { "sort-packages": true }
+    "extra": {
+        "laravel": {
+            "providers": ["Cluion\\Turing\\Laravel\\TuringServiceProvider"],
+            "aliases": { "Turing": "Cluion\\Turing\\Laravel\\Facade\\Turing" }
+        }
+    },
+    "config": { "sort-packages": true, "allow-plugins": { "*": true } }
 }
