@@ -3,19 +3,37 @@ declare(strict_types=1);
 
 namespace Cluion\Turing\Laravel\Http;
 
+use Cluion\Turing\Laravel\TuringManager;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
 /**
- * Challenge endpoint controller. The JSON response body is implemented in the
- * task that covers the endpoint; this stub keeps the route resolvable.
+ * Serves fresh challenges as JSON for the client widget to render.
  */
 final class ChallengeController
 {
     /**
-     * Placeholder action; replaced with the JSON challenge response later.
-     *
-     * @return array<string, mixed>
+     * Hold the manager used to issue challenges.
      */
-    public function show(): array
+    public function __construct(private readonly TuringManager $manager)
     {
-        return [];
+    }
+
+    /**
+     * Issue a challenge of the requested type and return it as JSON.
+     */
+    public function show(Request $request): JsonResponse
+    {
+        $param = (string) config('turing.route.type_param', 'type');
+        $type = $request->query($param);
+        $challenge = $this->manager->challenge(is_string($type) && $type !== '' ? $type : null);
+
+        return new JsonResponse([
+            'token'   => $challenge->token,
+            'image'   => $challenge->image,
+            'params'  => $challenge->params,
+            'type'    => $challenge->type,
+            'expires' => $challenge->expires,
+        ]);
     }
 }
