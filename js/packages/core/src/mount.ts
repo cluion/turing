@@ -1,5 +1,6 @@
 import { fetchChallenge, injectToken, pack, type Challenge } from './client';
 import { solvePbkdf2, solveShaBit, type Pbkdf2Params, type ShaBitParams } from './pow';
+import { sanitizeSvg } from './svg-sanitize';
 
 /**
  * Mount onto a single [data-turing] container: fetch a challenge, solve PoW or
@@ -12,7 +13,13 @@ export async function mount(el: HTMLElement): Promise<void> {
   }
   const type = el.getAttribute('data-turing-type') ?? undefined;
   const field = el.getAttribute('data-turing-field') ?? 'turing_token';
-  const form = el.closest('form') ?? el;
+  const enclosingForm = el.closest('form');
+  if (!enclosingForm) {
+    // Without an enclosing <form> the hidden token input is never submitted, so
+    // the widget would silently produce nothing. Surface it instead of hiding it.
+    console.warn('turing: [data-turing] is not inside a <form>; the token will not be submitted.');
+  }
+  const form = enclosingForm ?? el;
 
   const challenge = await fetchChallenge(url, type);
 
@@ -29,21 +36,33 @@ export async function mount(el: HTMLElement): Promise<void> {
 }
 
 /**
- * Scan the DOM for [data-turing] containers and mount each one.
+ * Scan the DOM for [data-turing] containers and mount each one. A mount failure
+ * (bad config, failed fetch, unsolved PoW) marks the container with
+ * data-turing-state="error" and dispatches a bubbling turing:error event rather
+ * than surfacing only as an unhandled promise rejection.
  */
 export function autoMount(root: ParentNode = document): void {
   root.querySelectorAll<HTMLElement>('[data-turing]').forEach((el) => {
-    void mount(el);
+    mount(el).catch((error: unknown) => {
+      el.setAttribute('data-turing-state', 'error');
+      el.dispatchEvent(new CustomEvent('turing:error', { bubbles: true, detail: { error } }));
+    });
   });
 }
 
 /**
- * Dispatch to the correct PoW solver based on the advertised algorithm.
+ * Dispatch to the correct PoW solver based on the advertised algorithm, failing
+ * loudly on anything the server would not have issued (mirrors PHP
+ * PowType::solverFor throwing PowAlgorithmUnsupported).
  */
 function solvePow(params: Record<string, unknown>): Promise<number> {
-  return params.algorithm === 'SHA-256'
-    ? solveShaBit(params as unknown as ShaBitParams)
-    : solvePbkdf2(params as unknown as Pbkdf2Params);
+  if (params.algorithm === 'PBKDF2-SHA256') {
+    return solvePbkdf2(params as unknown as Pbkdf2Params);
+  }
+  if (params.algorithm === 'SHA-256') {
+    return solveShaBit(params as unknown as ShaBitParams);
+  }
+  return Promise.reject(new Error(`Unsupported PoW algorithm: ${String(params.algorithm)}`));
 }
 
 /**
@@ -58,7 +77,9 @@ function renderImageChallenge(el: HTMLElement, form: HTMLElement, field: string,
   const parsed = new DOMParser().parseFromString(challenge.image as string, 'text/html');
   const svg = parsed.querySelector('svg');
   if (svg) {
-    el.appendChild(document.importNode(svg, true));
+    const imported = document.importNode(svg, true) as Element;
+    sanitizeSvg(imported);
+    el.appendChild(imported);
   }
 
   const input = document.createElement('input');

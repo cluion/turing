@@ -35,9 +35,18 @@ export function pack(token: string, answer: string): string {
 
 /**
  * Create or update a hidden input named `field` inside `form` with `value`.
+ * The lookup compares the name property directly rather than interpolating the
+ * field into a CSS selector, so a field containing quotes or brackets can
+ * neither break the query nor match an unintended input.
  */
 export function injectToken(field: string, value: string, form: HTMLElement): void {
-  let input = form.querySelector<HTMLInputElement>(`input[name="${field}"]`);
+  let input: HTMLInputElement | undefined;
+  for (const candidate of Array.from(form.querySelectorAll<HTMLInputElement>('input'))) {
+    if (candidate.name === field) {
+      input = candidate;
+      break;
+    }
+  }
   if (!input) {
     input = document.createElement('input');
     input.type = 'hidden';

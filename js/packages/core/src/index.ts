@@ -3,6 +3,7 @@ import { autoMount } from './mount';
 export * from './encoding';
 export * from './pow';
 export * from './client';
+export * from './svg-sanitize';
 export * from './mount';
 
 // Side effect: auto-mount any [data-turing] containers once the DOM is ready.

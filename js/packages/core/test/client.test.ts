@@ -31,4 +31,14 @@ describe('injectToken', () => {
     expect(input?.type).toBe('hidden');
     expect(input?.value).toBe('packed');
   });
+
+  it('handles a field name with selector metacharacters without throwing', () => {
+    const form = document.createElement('form');
+    const field = 'x"],input[name="other';
+    expect(() => injectToken(field, 'packed', form)).not.toThrow();
+    const inputs = Array.from(form.querySelectorAll<HTMLInputElement>('input'));
+    expect(inputs).toHaveLength(1);
+    expect(inputs[0].name).toBe(field);
+    expect(inputs[0].value).toBe('packed');
+  });
 });

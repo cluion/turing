@@ -17,4 +17,19 @@ describe('canonicalJson', () => {
     const out = canonicalJson({ b: 1, a: { y: 2, x: 1 }, c: 3 });
     expect(out).toBe('{"a":{"x":1,"y":2},"b":1,"c":3}');
   });
+
+  it('leaves slashes and non-ASCII unescaped to match PHP', () => {
+    expect(canonicalJson({ a: 'x/y', b: 'café' })).toBe('{"a":"x/y","b":"café"}');
+  });
+
+  it('rejects integer-like keys whose PHP ordering would diverge', () => {
+    expect(() => canonicalJson({ '0': 'a' })).toThrow(/integer-like/);
+    expect(() => canonicalJson({ '10': 'a', '2': 'b' })).toThrow(/integer-like/);
+  });
+
+  it('treats a __proto__ key as ordinary data without polluting prototypes', () => {
+    const parsed = JSON.parse('{"__proto__":{"x":1},"a":2}');
+    expect(canonicalJson(parsed)).toBe('{"__proto__":{"x":1},"a":2}');
+    expect(({} as Record<string, unknown>).x).toBeUndefined();
+  });
 });

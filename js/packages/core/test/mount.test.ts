@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { base64UrlDecode, base64UrlEncode } from '../src/encoding';
-import { mount } from '../src/mount';
+import { autoMount, mount } from '../src/mount';
 
 /**
  * Build a PBKDF2 challenge whose planted counter is `target`.
@@ -76,6 +76,59 @@ describe('mount (math)', () => {
     const hidden = form.querySelector<HTMLInputElement>('input[name="turing_token"]');
     const unpacked = JSON.parse(new TextDecoder().decode(base64UrlDecode(hidden!.value)));
     expect(unpacked).toEqual({ t: 'tok', a: '8' });
+    vi.restoreAllMocks();
+  });
+
+  it('strips event-handler attributes from a malicious challenge image', async () => {
+    const challenge = {
+      token: 'tok',
+      image: '<svg xmlns="http://www.w3.org/2000/svg" onload="steal()"><foreignObject><img src="x" onerror="steal()"></foreignObject></svg>',
+      params: null,
+      type: 'math',
+      expires: 1,
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(challenge), { status: 200 }));
+
+    const form = document.createElement('form');
+    const el = document.createElement('div');
+    el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
+    form.appendChild(el);
+    document.body.appendChild(form);
+
+    await mount(el);
+
+    const svg = el.querySelector('svg')!;
+    expect(svg.hasAttribute('onload')).toBe(false);
+    expect(el.querySelector('foreignObject')).toBeNull();
+    expect(el.querySelector('img')).toBeNull();
+    vi.restoreAllMocks();
+  });
+});
+
+describe('autoMount error handling', () => {
+  it('marks the container with data-turing-state="error" on an unsupported algorithm', async () => {
+    const challenge = {
+      token: 'tok',
+      image: null,
+      type: 'pow',
+      expires: 1,
+      params: { algorithm: 'ROT13' },
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(challenge), { status: 200 }));
+
+    const form = document.createElement('form');
+    const el = document.createElement('div');
+    el.setAttribute('data-turing', '');
+    el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
+    el.setAttribute('data-turing-type', 'pow');
+    form.appendChild(el);
+    document.body.appendChild(form);
+
+    autoMount(form);
+    // let the mount promise reject and the catch handler run
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(el.getAttribute('data-turing-state')).toBe('error');
     vi.restoreAllMocks();
   });
 });
