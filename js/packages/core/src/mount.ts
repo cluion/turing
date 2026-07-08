@@ -12,7 +12,9 @@ export async function mount(el: HTMLElement): Promise<void> {
     throw new Error('data-turing-url is required');
   }
   const type = el.getAttribute('data-turing-type') ?? undefined;
-  const field = el.getAttribute('data-turing-field') ?? 'turing_token';
+  // Fall back on an empty attribute too, so data-turing-field="" cannot target
+  // a nameless input; the '' name is never what an integrator intends.
+  const field = el.getAttribute('data-turing-field') || 'turing_token';
   const enclosingForm = el.closest('form');
   if (!enclosingForm) {
     // Without an enclosing <form> the hidden token input is never submitted, so

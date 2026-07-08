@@ -23,20 +23,32 @@ const encoder = new TextEncoder();
 // rejected before it becomes a huge, slow deriveBits length.
 const MAX_KEY_BYTES = 64;
 
-// Ceiling on PBKDF2 iterations so a hostile `cost` cannot hang the tab.
-const MAX_PBKDF2_COST = 10_000_000;
+// Ceiling on PBKDF2 iterations per derivation so a hostile `cost` cannot make a
+// single deriveBits call arbitrarily expensive (server default is 5000).
+const MAX_PBKDF2_COST = 1_000_000;
 
-// Ceiling on SHA-bit difficulty so `2 ** bits` stays finite and solvable
-// without a worker. Beyond this a no-worker client cannot cope anyway.
+// Ceiling on SHA-bit difficulty so `2 ** bits` stays finite. The wall-clock
+// deadline below is what actually bounds the work; this only rejects nonsense.
 const MAX_SHABIT_BITS = 32;
+
+// Hard ceiling on the SHA-bit counter budget regardless of difficulty, so the
+// loop always terminates in bounded time and fails fast to the error state
+// instead of spinning indefinitely on a hostile difficulty.
+const MAX_SHABIT_COUNTER = 5_000_000;
+
+// Wall-clock budget for a whole solve. Whichever limit (counter or time) is hit
+// first ends the loop; a hostile/misconfigured challenge fails fast rather than
+// pinning the tab for hours. Callers can override per solve.
+const DEFAULT_DEADLINE_MS = 30_000;
 
 /**
  * Default counter budget for a SHA-bit challenge: 16x the expected 2^bits
- * trials, so a legitimate client practically never exhausts the loop (spurious
- * failure ~ e^-16) yet stays bounded for a hostile difficulty.
+ * trials so a legitimate client practically never exhausts the loop (spurious
+ * failure ~ e^-16), clamped to a hard ceiling so a hostile difficulty stays
+ * bounded rather than effectively infinite.
  */
 export function shaBitBudget(difficultyBits: number): number {
-  return 16 * 2 ** difficultyBits;
+  return Math.min(16 * 2 ** difficultyBits, MAX_SHABIT_COUNTER);
 }
 
 /**
@@ -45,7 +57,11 @@ export function shaBitBudget(difficultyBits: number): number {
  * counter, or throws if the params are malformed or none is found within
  * maxCounter.
  */
-export async function solvePbkdf2(params: Pbkdf2Params, maxCounter = 100000): Promise<number> {
+export async function solvePbkdf2(
+  params: Pbkdf2Params,
+  maxCounter = 100000,
+  deadlineMs = DEFAULT_DEADLINE_MS,
+): Promise<number> {
   if (
     typeof params.salt !== 'string' ||
     typeof params.nonce !== 'string' ||
@@ -62,8 +78,12 @@ export async function solvePbkdf2(params: Pbkdf2Params, maxCounter = 100000): Pr
   }
   const saltBytes = encoder.encode(params.salt);
   const dkLenBits = dkLen * 8;
+  const deadline = performance.now() + deadlineMs;
 
   for (let counter = 1; counter <= maxCounter; counter++) {
+    if (performance.now() > deadline) {
+      throw new Error('PoW time budget exceeded');
+    }
     const key = await crypto.subtle.importKey(
       'raw',
       encoder.encode(params.nonce + counter),
@@ -92,6 +112,7 @@ export async function solvePbkdf2(params: Pbkdf2Params, maxCounter = 100000): Pr
 export async function solveShaBit(
   params: ShaBitParams,
   maxCounter = shaBitBudget(params.difficulty_bits),
+  deadlineMs = DEFAULT_DEADLINE_MS,
 ): Promise<number> {
   if (
     typeof params.salt !== 'string' ||
@@ -101,7 +122,11 @@ export async function solveShaBit(
   ) {
     throw new Error('invalid SHA-bit challenge params');
   }
+  const deadline = performance.now() + deadlineMs;
   for (let counter = 0; counter <= maxCounter; counter++) {
+    if (performance.now() > deadline) {
+      throw new Error('PoW time budget exceeded');
+    }
     const digest = new Uint8Array(
       await crypto.subtle.digest('SHA-256', encoder.encode(params.salt + counter)),
     );

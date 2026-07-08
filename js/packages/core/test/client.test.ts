@@ -32,6 +32,15 @@ describe('injectToken', () => {
     expect(input?.value).toBe('packed');
   });
 
+  it('updates an existing input in place instead of adding a second one', () => {
+    const form = document.createElement('form');
+    injectToken('turing_token', 'first', form);
+    injectToken('turing_token', 'second', form);
+    const inputs = form.querySelectorAll<HTMLInputElement>('input[name="turing_token"]');
+    expect(inputs).toHaveLength(1);
+    expect(inputs[0].value).toBe('second');
+  });
+
   it('handles a field name with selector metacharacters without throwing', () => {
     const form = document.createElement('form');
     const field = 'x"],input[name="other';

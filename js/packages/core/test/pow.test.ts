@@ -33,6 +33,15 @@ describe('shaBitBudget', () => {
   it('covers the server default difficulty (20) well above the mean 2^20', () => {
     expect(shaBitBudget(20)).toBeGreaterThan(2 ** 20);
   });
+
+  it('scales at low difficulty', () => {
+    expect(shaBitBudget(10)).toBe(16 * 2 ** 10);
+  });
+
+  it('clamps a hostile difficulty to a bounded ceiling', () => {
+    expect(shaBitBudget(32)).toBe(5_000_000);
+    expect(shaBitBudget(32)).toBeLessThan(16 * 2 ** 32);
+  });
 });
 
 describe('solveShaBit', () => {
@@ -45,5 +54,11 @@ describe('solveShaBit', () => {
     await expect(solveShaBit({ algorithm: 'SHA-256', salt: 's', difficulty_bits: 99 })).rejects.toThrow(
       /invalid SHA-bit/,
     );
+  });
+
+  it('gives up on a hostile difficulty within the time budget instead of hanging', async () => {
+    await expect(
+      solveShaBit({ algorithm: 'SHA-256', salt: 's', difficulty_bits: 30 }, undefined, 1),
+    ).rejects.toThrow(/time budget/);
   });
 });

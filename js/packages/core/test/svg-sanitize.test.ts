@@ -57,4 +57,19 @@ describe('sanitizeSvg', () => {
     expect(svg.querySelector('lineargradient')?.getAttribute('href')).toBe('#base');
     expect(svg.querySelector('rect')?.hasAttribute('href')).toBe(false);
   });
+
+  it('strips external url() references in fill/style but keeps local ones and plain colors', () => {
+    const svg = parseSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg">' +
+        '<rect fill="url(http://evil/leak.svg#x)" stroke="#333"/>' +
+        '<rect style="fill:url(http://evil/s.svg#y)"/>' +
+        '<circle fill="url(#grad)"/></svg>',
+    );
+    sanitizeSvg(svg);
+    const rects = svg.querySelectorAll('rect');
+    expect(rects[0].hasAttribute('fill')).toBe(false);
+    expect(rects[0].getAttribute('stroke')).toBe('#333');
+    expect(rects[1].hasAttribute('style')).toBe(false);
+    expect(svg.querySelector('circle')?.getAttribute('fill')).toBe('url(#grad)');
+  });
 });

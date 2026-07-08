@@ -8,14 +8,22 @@ const ALLOWED_ELEMENTS = new Set([
   'lineargradient', 'radialgradient', 'stop',
 ]);
 
+// Matches a url(...) reference to anything other than a local #fragment, e.g.
+// url(http://evil/x), url('//evil'), url( data:... ). Presentation attributes
+// (fill, stroke, filter, mask, clip-path, marker-*, cursor) and style accept
+// these and would fetch the external resource on render.
+const EXTERNAL_URL_REF = /url\(\s*['"]?\s*(?!#)/i;
+
 /**
  * Strip anything that could execute script or load external content from a
  * parsed SVG tree, mutating it in place before it enters the live DOM:
  * disallowed elements are removed, every on* event-handler attribute is
- * dropped, and href/xlink:href/src values that are not local #fragments are
- * removed. This is defense in depth that does not rely on the embedding page's
- * CSP -- inline event handlers execute on append regardless of how a node was
- * inserted, so avoiding innerHTML alone is not enough.
+ * dropped, href/xlink:href/src values that are not local #fragments are
+ * removed, and any attribute carrying an external url(...) reference (fill,
+ * style, filter, ...) is removed. This is defense in depth that does not rely
+ * on the embedding page's CSP -- inline event handlers execute on append
+ * regardless of how a node was inserted, so avoiding innerHTML alone is not
+ * enough, and a url(http://...) fetches without any user interaction.
  */
 export function sanitizeSvg(root: Element): void {
   const elements = [root, ...Array.from(root.querySelectorAll('*'))];
@@ -32,6 +40,10 @@ export function sanitizeSvg(root: Element): void {
       }
       const isRef = name === 'href' || name === 'src' || name.endsWith(':href');
       if (isRef && !attr.value.trim().startsWith('#')) {
+        el.removeAttribute(attr.name);
+        continue;
+      }
+      if (EXTERNAL_URL_REF.test(attr.value)) {
         el.removeAttribute(attr.name);
       }
     }
