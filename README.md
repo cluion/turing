@@ -26,6 +26,21 @@ Publish config with `php artisan vendor:publish --tag=turing-config`, then set
 `TURING_SECRET`. The `<x-turing/>` component renders a CSP-safe container the
 client widget mounts onto; the widget ships separately.
 
+## JS client (headless core)
+
+```bash
+pnpm add @cluion/turing-core
+```
+
+```js
+import '@cluion/turing-core'; // auto-mounts every <x-turing/> container
+```
+
+The core fetches the challenge from `data-turing-url`, solves PoW with native
+Web Crypto (no WASM), and injects the packed `turing_token` for the form to
+submit. Framework adapters (Web Component, Vue, React) and a CDN bundle ship
+separately.
+
 ## Cross-language vectors
 
 `php/tests/vectors/` is the wire contract. Language ports MUST reproduce these

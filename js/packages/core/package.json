@@ -7,17 +7,25 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
+    "happy-dom": "^15.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
-    "vitest": "^2.0.0",
-    "happy-dom": "^15.0.0"
+    "vitest": "^2.0.0"
   }
 }

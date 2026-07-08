@@ -8,7 +8,7 @@
     "declaration": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
-    "types": []
+    "types": ["node"]
   },
   "include": ["src", "test"]
 }
