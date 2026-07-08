@@ -2,30 +2,42 @@
 
 Self-hosted, zero-dependency, cross-language modern captcha. cluion brand.
 
-## Core (this package)
+## Core
 
-Framework-agnostic PHP core. Token = `base64url(payload).base64url(signature)`
-with canonical (sorted-key) JSON. Default signing: HMAC-SHA256 (Ed25519 opt-in
-via ext-sodium). Challenge types: `math`, `text`, `pow` (PBKDF2-SHA256 default,
-SHA-256 leading-zero-bit opt-in). Stateless by default; single-use via a `Store`.
+Framework-agnostic PHP core under `php/src/Core`. Token = `base64url(payload).base64url(signature)`
+with canonical (sorted-key) JSON. HMAC-SHA256 default signing (Ed25519 opt-in).
+Challenge types: `math`, `text`, `pow` (PBKDF2-SHA256 default, SHA-256 bit opt-in).
+Stateless by default; single-use via a `Store`.
+
+## Laravel
+
+One line to show, one line to verify:
+
+```blade
+<x-turing type="pow" />
+```
 
 ```php
-use Cluion\Turing\Core\Turing;
-// The Core API is explicit by design; a framework integration layer provides
-// the one-line sugar. See tests/Core/TuringFacadeTest.php for the full setup.
+$request->validate(['turing_token' => 'required|turing']);
+// or: Turing::verifyRequest($request);
 ```
+
+Publish config with `php artisan vendor:publish --tag=turing-config`, then set
+`TURING_SECRET`. The `<x-turing/>` component renders a CSP-safe container the
+client widget mounts onto; the widget ships separately.
 
 ## Cross-language vectors
 
-`tests/vectors/` is the wire contract. JS and other language ports MUST
-reproduce these fixtures exactly (token bytes, PoW counters, answer hashes).
-`keySignature` and any binary payload field are always base64url of the raw bytes.
+`php/tests/vectors/` is the wire contract. Language ports MUST reproduce these
+fixtures exactly (token bytes, PoW counters, answer hashes). Binary payload
+fields (e.g. `keySignature`) are always base64url of the raw bytes.
 
 ## Development
 
 ```bash
 composer install
-vendor/bin/phpunit
+vendor/bin/phpunit                 # Core + Laravel suites
+vendor/bin/phpunit --testsuite Core
 ```
 
 Coverage needs a driver (pcov or xdebug) and runs in CI:
