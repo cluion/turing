@@ -1,0 +1,13 @@
+{
+  "token": "demo-token",
+  "image": null,
+  "type": "pow",
+  "expires": 9999999999,
+  "params": {
+    "algorithm": "PBKDF2-SHA256",
+    "salt": "vsalt",
+    "nonce": "vnonce",
+    "cost": 100,
+    "keySignature": "5BkpOKxye8efvkkqtqzTXTKULjSJdxLtfyJW2Q29w0E"
+  }
+}
