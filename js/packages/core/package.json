@@ -38,8 +38,7 @@
   },
   "homepage": "https://git.cluion.com/ningyungame/turing",
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "scripts": {
     "build": "tsup",

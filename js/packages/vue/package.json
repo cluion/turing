@@ -16,10 +16,28 @@
   "files": [
     "dist"
   ],
+  "keywords": [
+    "captcha",
+    "vue",
+    "component",
+    "turing-captcha",
+    "cluion",
+    "turing"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://git.cluion.com/ningyungame/turing.git",
+    "directory": "js/packages/vue"
+  },
+  "homepage": "https://git.cluion.com/ningyungame/turing",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {
     "@cluion/turing-element": "workspace:*"

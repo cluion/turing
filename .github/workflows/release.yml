@@ -1,14 +1,16 @@
 name: release
+# Manual trigger only: releases are normally published by hand (see the
+# maintainer runbook). This stays available as a CI fallback; provenance is
+# passed as a flag because it only works with CI OIDC, never locally.
 on:
-  push:
-    tags: ['v*']
+  workflow_dispatch:
 permissions:
   contents: read
   id-token: write            # npm provenance
 jobs:
   publish:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: js/packages/core } }
+    defaults: { run: { working-directory: js } }
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -16,7 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, registry-url: 'https://registry.npmjs.org' }
       - run: pnpm install --frozen-lockfile
-        working-directory: js
-      - run: pnpm publish --access public --no-git-checks
+      # -r publishes every public workspace package in dependency order
+      # (core -> element -> vue/react) and rewrites workspace:* to real versions.
+      - run: pnpm -r publish --access public --no-git-checks --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
