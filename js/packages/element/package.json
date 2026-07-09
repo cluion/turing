@@ -1,0 +1,41 @@
+{
+  "name": "@cluion/turing-element",
+  "version": "0.1.0",
+  "description": "<turing-captcha> custom element for the Turing captcha.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/turing-element.global.js"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./global": "./dist/turing-element.global.js"
+  },
+  "unpkg": "./dist/turing-element.global.js",
+  "jsdelivr": "./dist/turing-element.global.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cluion/turing-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "happy-dom": "^15.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
