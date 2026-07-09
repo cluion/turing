@@ -1,0 +1,14 @@
+{
+  "name": "turing-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predocs:dev": "node scripts/sync-widget.mjs",
+    "docs:dev": "vitepress dev",
+    "docs:build": "node scripts/check-vectors.mjs && node scripts/sync-widget.mjs && vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.5.0"
+  }
+}
