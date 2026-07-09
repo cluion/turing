@@ -1,1 +1,1 @@
-export {};
+export { TuringCaptchaElement } from './element';
