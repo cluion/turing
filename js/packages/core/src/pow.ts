@@ -61,6 +61,7 @@ export async function solvePbkdf2(
   params: Pbkdf2Params,
   maxCounter = 100000,
   deadlineMs = DEFAULT_DEADLINE_MS,
+  signal?: AbortSignal,
 ): Promise<number> {
   if (
     typeof params.salt !== 'string' ||
@@ -81,6 +82,9 @@ export async function solvePbkdf2(
   const deadline = performance.now() + deadlineMs;
 
   for (let counter = 1; counter <= maxCounter; counter++) {
+    if (signal?.aborted) {
+      throw new Error('aborted');
+    }
     if (performance.now() > deadline) {
       throw new Error('PoW time budget exceeded');
     }
@@ -113,6 +117,7 @@ export async function solveShaBit(
   params: ShaBitParams,
   maxCounter = shaBitBudget(params.difficulty_bits),
   deadlineMs = DEFAULT_DEADLINE_MS,
+  signal?: AbortSignal,
 ): Promise<number> {
   if (
     typeof params.salt !== 'string' ||
@@ -124,6 +129,9 @@ export async function solveShaBit(
   }
   const deadline = performance.now() + deadlineMs;
   for (let counter = 0; counter <= maxCounter; counter++) {
+    if (signal?.aborted) {
+      throw new Error('aborted');
+    }
     if (performance.now() > deadline) {
       throw new Error('PoW time budget exceeded');
     }
