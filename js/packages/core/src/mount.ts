@@ -1,17 +1,26 @@
 import { fetchChallenge, injectToken, pack, type Challenge } from './client';
 import { solvePbkdf2, solveShaBit, type Pbkdf2Params, type ShaBitParams } from './pow';
+import { solveInWorker } from './solve';
 import { sanitizeSvg } from './svg-sanitize';
+
+/** Options for a single mount: an AbortSignal to cancel the solve. */
+export interface MountOptions {
+  signal?: AbortSignal;
+}
 
 /**
  * Mount onto a single [data-turing] container: fetch a challenge, solve PoW or
- * show the image, then inject the packed token into the enclosing form.
+ * show the image, then inject the packed token into the enclosing form. Opt into
+ * offloading the PoW to a Web Worker with the `data-turing-worker` attribute;
+ * pass an AbortSignal via opts to cancel an in-flight solve.
  */
-export async function mount(el: HTMLElement): Promise<void> {
+export async function mount(el: HTMLElement, opts: MountOptions = {}): Promise<void> {
   const url = el.getAttribute('data-turing-url');
   if (!url) {
     throw new Error('data-turing-url is required');
   }
   const type = el.getAttribute('data-turing-type') ?? undefined;
+  const useWorker = el.hasAttribute('data-turing-worker');
   // Fall back on an empty attribute too, so data-turing-field="" cannot target
   // a nameless input; the '' name is never what an integrator intends.
   const field = el.getAttribute('data-turing-field') || 'turing_token';
@@ -26,7 +35,7 @@ export async function mount(el: HTMLElement): Promise<void> {
   const challenge = await fetchChallenge(url, type);
 
   if (challenge.type === 'pow' && challenge.params) {
-    const counter = await solvePow(challenge.params);
+    const counter = await solvePow(challenge.params, useWorker, opts.signal);
     injectToken(field, pack(challenge.token, String(counter)), form as HTMLElement);
     el.setAttribute('data-turing-state', 'solved');
     return;
@@ -55,16 +64,22 @@ export function autoMount(root: ParentNode = document): void {
 /**
  * Dispatch to the correct PoW solver based on the advertised algorithm, failing
  * loudly on anything the server would not have issued (mirrors PHP
- * PowType::solverFor throwing PowAlgorithmUnsupported).
+ * PowType::solverFor throwing PowAlgorithmUnsupported). When useWorker is set,
+ * offload to a Web Worker (which falls back to inline when Worker is
+ * unavailable); otherwise solve inline on the current thread.
  */
-function solvePow(params: Record<string, unknown>): Promise<number> {
-  if (params.algorithm === 'PBKDF2-SHA256') {
-    return solvePbkdf2(params as unknown as Pbkdf2Params);
+function solvePow(params: Record<string, unknown>, useWorker: boolean, signal?: AbortSignal): Promise<number> {
+  const algorithm = String(params.algorithm);
+  if (algorithm !== 'PBKDF2-SHA256' && algorithm !== 'SHA-256') {
+    return Promise.reject(new Error(`Unsupported PoW algorithm: ${algorithm}`));
   }
-  if (params.algorithm === 'SHA-256') {
-    return solveShaBit(params as unknown as ShaBitParams);
+  if (useWorker) {
+    return solveInWorker(algorithm, params, { signal });
   }
-  return Promise.reject(new Error(`Unsupported PoW algorithm: ${String(params.algorithm)}`));
+  if (algorithm === 'PBKDF2-SHA256') {
+    return solvePbkdf2(params as unknown as Pbkdf2Params, undefined, undefined, signal);
+  }
+  return solveShaBit(params as unknown as ShaBitParams, undefined, undefined, signal);
 }
 
 /**

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { base64UrlDecode, base64UrlEncode } from '../src/encoding';
 import { autoMount, mount } from '../src/mount';
+import * as solveModule from '../src/solve';
 
 /**
  * Build a PBKDF2 challenge whose planted counter is `target`.
@@ -45,6 +46,48 @@ describe('mount (pow)', () => {
     expect(input).not.toBeNull();
     const unpacked = JSON.parse(new TextDecoder().decode(base64UrlDecode(input!.value)));
     expect(unpacked).toEqual({ t: 'server-token', a: '4' });
+    vi.restoreAllMocks();
+  });
+
+  it('routes through solveInWorker when data-turing-worker is present (inline fallback with no Worker)', async () => {
+    expect(typeof (globalThis as unknown as { Worker?: unknown }).Worker).toBe('undefined');
+    const challenge = await powChallenge(4);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(challenge), { status: 200 }));
+    const worker = vi.spyOn(solveModule, 'solveInWorker');
+
+    const form = document.createElement('form');
+    const el = document.createElement('div');
+    el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
+    el.setAttribute('data-turing-type', 'pow');
+    el.setAttribute('data-turing-worker', '');
+    form.appendChild(el);
+    document.body.appendChild(form);
+
+    await mount(el);
+
+    expect(worker).toHaveBeenCalledWith('PBKDF2-SHA256', expect.anything(), expect.anything());
+    const input = form.querySelector<HTMLInputElement>('input[name="turing_token"]');
+    const unpacked = JSON.parse(new TextDecoder().decode(base64UrlDecode(input!.value)));
+    expect(unpacked).toEqual({ t: 'server-token', a: '4' });
+    expect(el.getAttribute('data-turing-state')).toBe('solved');
+    vi.restoreAllMocks();
+  });
+
+  it('does not use the worker path when data-turing-worker is absent', async () => {
+    const challenge = await powChallenge(4);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(challenge), { status: 200 }));
+    const worker = vi.spyOn(solveModule, 'solveInWorker');
+
+    const form = document.createElement('form');
+    const el = document.createElement('div');
+    el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
+    el.setAttribute('data-turing-type', 'pow');
+    form.appendChild(el);
+    document.body.appendChild(form);
+
+    await mount(el);
+
+    expect(worker).not.toHaveBeenCalled();
     vi.restoreAllMocks();
   });
 });
