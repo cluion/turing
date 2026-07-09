@@ -7,19 +7,45 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/turing.global.js"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./global": "./dist/turing.global.js"
   },
+  "unpkg": "./dist/turing.global.js",
+  "jsdelivr": "./dist/turing.global.js",
   "files": [
     "dist"
   ],
+  "keywords": [
+    "captcha",
+    "pow",
+    "proof-of-work",
+    "web-crypto",
+    "cluion",
+    "turing"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://git.cluion.com/ningyungame/turing.git",
+    "directory": "js/packages/core"
+  },
+  "homepage": "https://git.cluion.com/ningyungame/turing",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
