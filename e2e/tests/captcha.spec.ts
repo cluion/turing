@@ -19,5 +19,9 @@ test('a tampered token is rejected', async ({ page }) => {
   });
   const posted = page.waitForResponse((r) => r.url().endsWith('/submit'));
   await page.getByRole('button', { name: 'Submit' }).click();
-  expect((await posted).status()).toBe(422);
+  // A native browser form post sends Accept: text/html, so Laravel rejects a
+  // failed validation with a 302 redirect back to the form (JSON clients get
+  // 422). The redirect back — instead of the ok payload — is the rejection.
+  expect((await posted).status()).toBe(302);
+  await page.waitForURL('**/captcha-demo');
 });
