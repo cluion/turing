@@ -1,0 +1,59 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # testbench and phpunit are pinned per Laravel version: testbench 8/9/10
+        # track Laravel 10/11/12, and each supports a different phpunit range.
+        include:
+          - laravel: '^10.0'
+            testbench: '^8.0'
+            phpunit: '^10.5'
+          - laravel: '^11.0'
+            testbench: '^9.0'
+            phpunit: '^11.0'
+          - laravel: '^12.0'
+            testbench: '^10.0'
+            phpunit: '^11.0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3', extensions: mbstring, coverage: none }
+      - run: composer require --dev --no-update "orchestra/testbench:${{ matrix.testbench }}" "phpunit/phpunit:${{ matrix.phpunit }}"
+      - run: composer require --no-update "illuminate/support:${{ matrix.laravel }}"
+      - run: composer update --prefer-dist --no-interaction --with-all-dependencies
+      - run: vendor/bin/phpunit
+
+  js:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: js } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r test
+      - run: pnpm -r typecheck
+      - run: pnpm -r build
+
+  e2e:
+    needs: [php, js]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3', extensions: mbstring, coverage: none }
+      - run: composer update --prefer-dist --no-interaction
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      # Build the browser widget; the testbench route serves it from dist.
+      - run: pnpm install --frozen-lockfile && pnpm --filter @cluion/turing-core build
+        working-directory: js
+      - run: pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium && pnpm exec playwright test
+        working-directory: e2e
