@@ -28,18 +28,37 @@ client widget mounts onto; the widget ships separately.
 
 ## JS client (headless core)
 
+Bundler apps install from npm:
+
 ```bash
 pnpm add @cluion/turing-core
 ```
 
 ```js
-import '@cluion/turing-core'; // auto-mounts every <x-turing/> container
+import '@cluion/turing-core'; // auto-mounts every [data-turing] container
+```
+
+Plain HTML pages load the browser global from a CDN. Pin an exact version and
+add Subresource Integrity so a CDN compromise cannot swap the script:
+
+```html
+<script
+  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.0/dist/turing.global.js"
+  integrity="sha384-REPLACE_WITH_PUBLISHED_HASH"
+  crossorigin="anonymous"
+  defer></script>
+
+<form method="post" action="/submit">
+  <div data-turing data-turing-url="/turing/challenge" data-turing-type="pow"></div>
+  <button type="submit">Send</button>
+</form>
 ```
 
 The core fetches the challenge from `data-turing-url`, solves PoW with native
 Web Crypto (no WASM), and injects the packed `turing_token` for the form to
-submit. Framework adapters (Web Component, Vue, React) and a CDN bundle ship
-separately.
+submit. A runnable page is in [`examples/plain-html/index.html`](examples/plain-html/index.html);
+see [`js/packages/core/README.md`](js/packages/core/README.md) for details.
+Framework adapters (Web Component, Vue, React) ship separately.
 
 ## Cross-language vectors
 
