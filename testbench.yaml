@@ -1,0 +1,19 @@
+laravel: '@testbench'
+
+providers:
+  - Cluion\Turing\Laravel\TuringServiceProvider
+
+workbench:
+  start: '/captcha-demo'
+  install: true
+  health: false
+  discovers:
+    web: true
+    views: true
+
+# A deterministic secret so the demo/e2e can sign and verify tokens. The dev
+# server bootstraps the app per request, so the single-use nonce store needs a
+# cache that persists across requests: file (on disk), not array (in-memory).
+env:
+  - TURING_SECRET="workbench-demo-secret"
+  - CACHE_STORE=file
