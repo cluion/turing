@@ -23,7 +23,7 @@ swap the script (the `sha384` hash is generated after the first publish — see
 ```html
 <script
   src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.0/dist/turing.global.js"
-  integrity="sha384-REPLACE_WITH_PUBLISHED_HASH"
+  integrity="sha384-CUAGKKDGZDcu6hnrOgnpoNw7eLOC9QTfaUAeLTI4OoN+Xnb2kgGacoBZQkELpCy0"
   crossorigin="anonymous"
   defer></script>
 

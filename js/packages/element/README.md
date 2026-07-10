@@ -24,7 +24,7 @@ swap the script:
 ```html
 <script
   src="https://cdn.jsdelivr.net/npm/@cluion/turing-element@0.1.0/dist/turing-element.global.js"
-  integrity="sha384-REPLACE_WITH_PUBLISHED_HASH"
+  integrity="sha384-Ki+xF1pDhp5oYzT7grDAbPszr4vxl7ERqa5tmQQBOAlnddVFOTsY3zKak1GR/afD"
   crossorigin="anonymous"
   defer></script>
 
