@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # JS packages, docs, and e2e (pnpm). Grouped so weekly updates arrive as one
+  # PR per ecosystem instead of a swarm — these are all dev/build tooling.
+  - package-ecosystem: npm
+    directories:
+      - "/js"
+      - "/js/packages/*"
+      - "/docs"
+      - "/e2e"
+    schedule:
+      interval: weekly
+    groups:
+      js-toolchain:
+        patterns:
+          - "*"
+
+  # PHP (composer): the one runtime dep plus dev tooling.
+  - package-ecosystem: composer
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      php:
+        patterns:
+          - "*"
+
+  # Keep the CI/release/pages actions current.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"

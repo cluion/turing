@@ -1,7 +1,7 @@
 ---
 head:
   - - script
-    - { src: /turing.global.js, defer: '' }
+    - { src: ./turing.global.js, defer: '' }
 ---
 
 # Live demo
@@ -15,7 +15,7 @@ server issuing the challenge.
 <form method="post" action="#" style="display:grid;gap:1rem;max-width:32rem">
   <div
     data-turing
-    data-turing-url="/mock-challenge.json"
+    data-turing-url="./mock-challenge.json"
     data-turing-type="pow"></div>
   <button type="button">Submit (token is injected above)</button>
 </form>

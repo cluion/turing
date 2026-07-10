@@ -3,6 +3,9 @@ import { defineConfig } from 'vitepress';
 // Static docs for Turing: integration guides, the wire-contract reference bound
 // to the frozen vectors, and a live in-browser demo.
 export default defineConfig({
+  // GitHub Pages serves this as a project site under /turing/; the deploy
+  // workflow sets DOCS_BASE. Local dev/build stays at '/'.
+  base: process.env.DOCS_BASE || '/',
   title: 'Turing',
   description: 'Self-hosted, zero-dependency, cross-language modern captcha.',
   themeConfig: {
