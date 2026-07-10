@@ -20,7 +20,7 @@ jobs:
             testbench: '^10.0'
             phpunit: '^11.0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with: { php-version: '8.3', extensions: mbstring, coverage: none }
       # Laravel 10/11 are past security support, so even their latest releases
@@ -36,10 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: js } }
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with: { version: 10 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22 }
       - run: pnpm install --frozen-lockfile
       # Build first: the element/vue/react packages resolve @cluion/turing-core
@@ -52,13 +52,13 @@ jobs:
     needs: [php, js]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with: { php-version: '8.3', extensions: mbstring, coverage: none }
       - run: composer update --prefer-dist --no-interaction
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with: { version: 10 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22 }
       # Build the browser widget; the testbench route serves it from dist.
       - run: pnpm install --frozen-lockfile && pnpm --filter @cluion/turing-core build
