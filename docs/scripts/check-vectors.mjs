@@ -5,7 +5,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const docPath = fileURLToPath(new URL('../reference/wire-contract.md', import.meta.url));
+const docPaths = [
+  fileURLToPath(new URL('../reference/wire-contract.md', import.meta.url)),
+  fileURLToPath(new URL('../zh/reference/wire-contract.md', import.meta.url)),
+];
 const vectorsDir = fileURLToPath(new URL('../../php/tests/vectors/', import.meta.url));
 
 /** Canonical stringify (recursively sorted keys) so equality ignores formatting. */
@@ -20,29 +23,32 @@ function canonical(value) {
   return JSON.stringify(value);
 }
 
-const doc = readFileSync(docPath, 'utf8');
 const tag = /<!--\s*vector:([\w.-]+)\s*-->\s*```json\n([\s\S]*?)\n```/g;
 
 let checked = 0;
 const failures = [];
-for (const [, name, block] of doc.matchAll(tag)) {
-  checked++;
-  let embedded;
-  let actual;
-  try {
-    embedded = JSON.parse(block);
-  } catch (error) {
-    failures.push(`${name}: embedded JSON does not parse — ${error.message}`);
-    continue;
-  }
-  try {
-    actual = JSON.parse(readFileSync(vectorsDir + name, 'utf8'));
-  } catch (error) {
-    failures.push(`${name}: cannot read fixture — ${error.message}`);
-    continue;
-  }
-  if (canonical(embedded) !== canonical(actual)) {
-    failures.push(`${name}: embedded JSON has drifted from php/tests/vectors/${name}`);
+for (const docPath of docPaths) {
+  const label = docPath.split('/docs/')[1] ?? docPath;
+  const doc = readFileSync(docPath, 'utf8');
+  for (const [, name, block] of doc.matchAll(tag)) {
+    checked++;
+    let embedded;
+    let actual;
+    try {
+      embedded = JSON.parse(block);
+    } catch (error) {
+      failures.push(`${label} ${name}: embedded JSON does not parse — ${error.message}`);
+      continue;
+    }
+    try {
+      actual = JSON.parse(readFileSync(vectorsDir + name, 'utf8'));
+    } catch (error) {
+      failures.push(`${label} ${name}: cannot read fixture — ${error.message}`);
+      continue;
+    }
+    if (canonical(embedded) !== canonical(actual)) {
+      failures.push(`${label} ${name}: embedded JSON has drifted from php/tests/vectors/${name}`);
+    }
   }
 }
 
