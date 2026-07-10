@@ -5,7 +5,7 @@
 [![Packagist](https://img.shields.io/packagist/v/cluion/turing?label=packagist%20cluion%2Fturing)](https://packagist.org/packages/cluion/turing)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#授權)
 
-[English](README.md) · **繁體中文**
+[English](README.md) · **繁體中文** · 📖 [文件站](https://cluion.github.io/turing/)
 
 伺服器發出一個已簽章的 challenge、前端 widget 用瀏覽器原生 Web Crypto 解開它、
 再把 token 交給所在表單送回伺服器驗證。不呼叫任何第三方服務、不追蹤。三層架構:

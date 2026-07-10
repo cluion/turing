@@ -5,7 +5,7 @@
 [![Packagist](https://img.shields.io/packagist/v/cluion/turing?label=packagist%20cluion%2Fturing)](https://packagist.org/packages/cluion/turing)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 
-**English** · [繁體中文](README.zh-TW.md)
+**English** · [繁體中文](README.zh-TW.md) · 📖 [Documentation](https://cluion.github.io/turing/)
 
 A signed challenge the server issues, a client widget that solves it in the
 browser with native Web Crypto, and a token the enclosing form submits for the
