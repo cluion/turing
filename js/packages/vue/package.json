@@ -26,10 +26,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://git.cluion.com/ningyungame/turing.git",
+    "url": "git+https://github.com/cluion/turing.git",
     "directory": "js/packages/vue"
   },
-  "homepage": "https://git.cluion.com/ningyungame/turing",
+  "homepage": "https://github.com/cluion/turing",
   "publishConfig": {
     "access": "public"
   },

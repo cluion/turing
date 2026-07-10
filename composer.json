@@ -3,6 +3,12 @@
     "description": "Self-hosted, zero-dependency, cross-language modern captcha with a Laravel integration.",
     "license": "MIT",
     "type": "library",
+    "homepage": "https://github.com/cluion/turing",
+    "support": {
+        "issues": "https://github.com/cluion/turing/issues",
+        "source": "https://github.com/cluion/turing"
+    },
+    "keywords": ["captcha", "pow", "proof-of-work", "laravel", "cluion", "turing"],
     "require": {
         "php": ">=8.2",
         "ext-json": "*",

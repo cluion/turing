@@ -62,5 +62,5 @@ By default the store is the cache (`Cache::pull`, get-and-forget), making each
 nonce one-shot so a solved token cannot be replayed. Point `turing.store` at any
 cache the app already uses.
 
-A full runnable example lives in [`workbench/`](https://git.cluion.com/ningyungame/turing)
+A full runnable example lives in [`workbench/`](https://github.com/cluion/turing)
 (`vendor/bin/testbench serve`, then visit `/captcha-demo`).
