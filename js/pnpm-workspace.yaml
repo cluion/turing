@@ -1,2 +1,10 @@
 packages:
   - 'packages/*'
+
+# Dev-toolchain security pins (none of these ship at runtime):
+# - vitest 4 requires vite ^6; 6.4.3 is the patched line.
+# - esbuild 0.25.x clears both the <=0.24.2 and the 0.27.3-0.28.1 advisories
+#   (tsup would otherwise pull 0.27.x).
+overrides:
+  vite: ^6.4.3
+  esbuild: ^0.25.12

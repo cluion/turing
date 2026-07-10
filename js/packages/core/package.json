@@ -48,9 +48,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
-    "happy-dom": "^15.0.0",
-    "tsup": "^8.0.0",
+    "happy-dom": "^20.10.6",
+    "tsup": "^8.5.1",
     "typescript": "^5.4.0",
-    "vitest": "^2.0.0"
+    "vitest": "^4.1.10"
   }
 }

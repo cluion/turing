@@ -18,14 +18,22 @@ describe('sanitizeSvg', () => {
   });
 
   it('removes script, style, foreignObject, use and image elements', () => {
-    const svg = parseSvg(
-      '<svg xmlns="http://www.w3.org/2000/svg">' +
-        '<script>bad()</script><style>@import url(x)</style>' +
-        '<foreignObject><img src="x" onerror="z()"></foreignObject>' +
-        '<use href="http://evil/a.svg#x"/><image href="http://evil/beacon"/>' +
-        '<rect/></svg>',
-    );
+    // Build the hostile tree with DOM APIs rather than a parsed string: the HTML
+    // parser reshapes <script>/<style> inside SVG foreign content differently
+    // across engines (happy-dom drops the following siblings), so construct the
+    // nodes directly to test the sanitizer's allowlist rather than the parser.
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    for (const tag of ['script', 'style', 'use', 'image']) {
+      svg.appendChild(document.createElementNS(SVG_NS, tag));
+    }
+    const fo = document.createElementNS(SVG_NS, 'foreignObject');
+    fo.appendChild(document.createElement('img'));
+    svg.appendChild(fo);
+    svg.appendChild(document.createElementNS(SVG_NS, 'rect')); // legit content
+
     sanitizeSvg(svg);
+
     expect(svg.querySelector('script')).toBeNull();
     expect(svg.querySelector('style')).toBeNull();
     expect(svg.querySelector('foreignObject')).toBeNull();
