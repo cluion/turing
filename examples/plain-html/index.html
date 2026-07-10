@@ -1,8 +1,22 @@
 <!doctype html>
 <meta charset="utf-8" />
 <title>Turing plain-HTML example</title>
-<!-- For local dev, swap the CDN src for ../../js/packages/core/dist/turing.global.js -->
-<!-- Pin the version and add integrity="sha384-..." crossorigin in production. -->
+<!--
+  This template talks to a real backend. Opening it with file:// will NOT work:
+  the widget fetches data-turing-url (/turing/challenge), which under file://
+  resolves to file:///turing/challenge and the browser blocks it (CORS / no
+  fetch over file://). To see it run you need BOTH:
+    1. serve this page over http, and
+    2. a live challenge endpoint at /turing/challenge.
+
+  Two ready-made ways to try it:
+    - Laravel backend:  `vendor/bin/testbench serve`  →  http://127.0.0.1:8000/captcha-demo
+    - No backend (client-only, static challenge):  https://cluion.github.io/turing/demo
+
+  For local dev against your own server, swap the CDN src below for
+  ../../js/packages/core/dist/turing.global.js. Keep the pinned version and the
+  integrity="sha384-..." crossorigin attributes in production.
+-->
 <script src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.0/dist/turing.global.js" defer></script>
 
 <form method="post" action="/submit">
