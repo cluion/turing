@@ -21,7 +21,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with: { version: 10 }
       - uses: actions/setup-node@v6
-        with: { node-version: 22 }
+        with: { node-version: 24 }
       # Build the widget so the docs demo can serve it from public/, then the site.
       - run: pnpm install --frozen-lockfile && pnpm --filter @cluion/turing-core build
         working-directory: js

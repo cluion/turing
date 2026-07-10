@@ -40,7 +40,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with: { version: 10 }
       - uses: actions/setup-node@v6
-        with: { node-version: 22 }
+        with: { node-version: 24 }
       - run: pnpm install --frozen-lockfile
       # Build first: the element/vue/react packages resolve @cluion/turing-core
       # through its dist exports, which a fresh checkout does not have yet.
@@ -59,7 +59,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with: { version: 10 }
       - uses: actions/setup-node@v6
-        with: { node-version: 22 }
+        with: { node-version: 24 }
       # Build the browser widget; the testbench route serves it from dist.
       - run: pnpm install --frozen-lockfile && pnpm --filter @cluion/turing-core build
         working-directory: js

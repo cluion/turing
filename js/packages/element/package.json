@@ -50,10 +50,10 @@
     "@cluion/turing-core": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.20.1",
+    "@types/node": "^24.13.3",
     "happy-dom": "^20.10.6",
     "tsup": "^8.5.1",
-    "typescript": "^5.4.0",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   }
 }

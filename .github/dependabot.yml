@@ -14,6 +14,15 @@ updates:
       js-toolchain:
         patterns:
           - "*"
+    ignore:
+      # TypeScript 7 is the native-compiler rewrite; tsup's dts bundler isn't
+      # ready for it yet. Adopt it as a deliberate migration, not a weekly PR.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # Keep @types/node on the Node LTS we run in CI (24); a major bump ahead
+      # of the runtime just adds noise.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   # PHP (composer): the one runtime dep plus dev tooling.
   - package-ecosystem: composer
