@@ -1,13 +1,23 @@
 import { mount } from '@cluion/turing-core';
 
+/** Host attribute → data-turing-* on the inner container. */
+const LABEL_ATTRS = [
+  ['label', 'data-turing-label'],
+  ['label-loading', 'data-turing-label-loading'],
+  ['label-idle', 'data-turing-label-idle'],
+  ['label-solving', 'data-turing-label-solving'],
+  ['label-solved', 'data-turing-label-solved'],
+  ['label-error', 'data-turing-label-error'],
+  ['label-aria', 'data-turing-label-aria'],
+] as const;
+
 /**
  * <turing-captcha url="..." type="pow" field="turing_token"> — a custom element
  * that renders a light-DOM container, mounts the Turing core onto it, and
  * re-emits the outcome as turing:solved / turing:error events. Light DOM keeps
  * the injected hidden input inside the surrounding form so it is submitted.
  *
- * Optional attributes: autostart (data-turing-autostart), no-worker
- * (data-turing-no-worker).
+ * Optional: autostart, no-worker, label / label-idle / label-solving / …
  */
 export class TuringCaptchaElement extends HTMLElement {
   /**
@@ -54,8 +64,11 @@ export class TuringCaptchaElement extends HTMLElement {
     container.setAttribute('data-turing-url', url);
     const type = this.getAttribute('type');
     if (type) container.setAttribute('data-turing-type', type);
+    else container.removeAttribute('data-turing-type');
     const field = this.getAttribute('field');
     if (field) container.setAttribute('data-turing-field', field);
+    else container.removeAttribute('data-turing-field');
+
     // Boolean attrs on the host → data-* on the container.
     if (this.hasAttribute('autostart')) {
       container.setAttribute('data-turing-autostart', '');
@@ -67,6 +80,16 @@ export class TuringCaptchaElement extends HTMLElement {
     } else {
       container.removeAttribute('data-turing-no-worker');
     }
+
+    for (const [hostAttr, dataAttr] of LABEL_ATTRS) {
+      const v = this.getAttribute(hostAttr);
+      if (v !== null && v !== '') {
+        container.setAttribute(dataAttr, v);
+      } else {
+        container.removeAttribute(dataAttr);
+      }
+    }
+
     return container;
   }
 

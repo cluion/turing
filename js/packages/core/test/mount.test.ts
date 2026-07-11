@@ -81,6 +81,29 @@ describe('mount (pow)', () => {
     vi.restoreAllMocks();
   });
 
+  it('uses custom labels from data-turing-label* attributes', async () => {
+    const challenge = await powChallenge(4);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(challenge), { status: 200 }));
+    const { el } = powMountEl({
+      'data-turing-no-worker': '',
+      'data-turing-label': '我不是機器人',
+      'data-turing-label-solving': '驗證中…',
+      'data-turing-label-solved': '已通過',
+    });
+
+    await mount(el);
+    expect(el.querySelector('[data-turing-status]')?.textContent).toBe('我不是機器人');
+
+    const solved = new Promise<void>((r) => el.addEventListener('turing:solved', () => r(), { once: true }));
+    const check = el.querySelector<HTMLInputElement>('[data-turing-check]')!;
+    check.checked = true;
+    check.dispatchEvent(new Event('change'));
+    await solved;
+
+    expect(el.querySelector('[data-turing-status]')?.textContent).toBe('已通過');
+    vi.restoreAllMocks();
+  });
+
   it('uses solveInWorker by default (inline fallback when Worker is missing)', async () => {
     expect(typeof (globalThis as unknown as { Worker?: unknown }).Worker).toBe('undefined');
     const challenge = await powChallenge(4);

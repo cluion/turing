@@ -1,35 +1,48 @@
 # 屬性與 props
 
-headless 核心讀取的容器屬性，以及各框架封裝暴露的 props／事件，一份說清楚。它們最終
-都對應到同一套底層行為。
+headless 核心讀取的容器屬性，以及各框架封裝暴露的 props／事件。
 
-## `[data-turing]` 容器（核心）
-
-由 `@cluion/turing-core` 在掛載時讀取。Laravel 的 `<x-turing>` 與 Web Component 會幫你輸出這些。
+## 行為屬性
 
 | 屬性 | 必填 | 說明 |
 |------|------|------|
-| `data-turing` | 是 | 標記掛載容器。 |
-| `data-turing-url` | 是 | Challenge 端點 URL。 |
-| `data-turing-type` | 否 | 例如 `pow`。省略則用伺服器預設。 |
-| `data-turing-field` | 否 | 隱藏 input 名稱。預設 `turing_token`。 |
-| `data-turing-autostart` | 否 | 僅 PoW：進頁即解（不要勾選框）。預設為互動 UI。 |
-| `data-turing-no-worker` | 否 | 僅 PoW：強制主執行緒。**Worker 預設開啟。** |
+| `data-turing` | 是 | 標記掛載容器 |
+| `data-turing-url` | 是 | Challenge 端點 |
+| `data-turing-type` | 否 | 例如 `pow` |
+| `data-turing-field` | 否 | 預設 `turing_token` |
+| `data-turing-autostart` | 否 | 進頁即算，不要勾選框 |
+| `data-turing-no-worker` | 否 | 強制主執行緒（Worker 預設開） |
 
-`data-turing-state`：`loading` / `idle` / `solving` / `solved` / `ready` / `error`。
+## 文案（PoW labels）
 
-## 事件
-
-| 事件 | 何時 |
-|------|------|
-| `turing:solved` | token 已注入表單 |
-| `turing:error` | 抓取／解題失敗 |
-| `turing:ready` | 圖形題已畫出（math/text） |
+| 屬性 | 預設 | 何時 |
+|------|------|------|
+| `data-turing-label` | — | **idle 簡寫**（勾選框那行） |
+| `data-turing-label-idle` | `I'm not a robot` | 等待勾選（優先於簡寫） |
+| `data-turing-label-loading` | `Loading…` | 抓題中 |
+| `data-turing-label-solving` | `Verifying…` | 計算中 |
+| `data-turing-label-solved` | `Verified` | 成功 |
+| `data-turing-label-error` | `Verification failed — try again` | 失敗 |
+| `data-turing-label-aria` | `Verify you are human` | checkbox aria-label |
 
 ## Laravel
 
 ```blade
-<x-turing type="pow" />
-<x-turing type="pow" autostart />
-<x-turing type="pow" :no-worker="true" />
+<x-turing
+  type="pow"
+  label="我不是機器人"
+  label-solving="驗證中…"
+  label-solved="已通過"
+  label-error="驗證失敗，請再試一次"
+/>
+```
+
+## Vue / React
+
+```vue
+<Turing url="..." type="pow" label="我不是機器人" label-solving="驗證中…" />
+```
+
+```jsx
+<Turing url="..." type="pow" label="我不是機器人" labelSolving="驗證中…" />
 ```

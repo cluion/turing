@@ -16,11 +16,18 @@ use Illuminate\View\Component;
 final class TuringComponent extends Component
 {
     /**
-     * @param string      $type      challenge type; empty means the config default
-     * @param string|null $field     hidden field name; null means the config value
-     * @param string|null $url       explicit endpoint URL that overrides the route
-     * @param bool        $autostart when true, PoW solves immediately (no checkbox)
-     * @param bool        $noWorker  when true, force main-thread PoW (disable Worker)
+     * @param string      $type         challenge type; empty means the config default
+     * @param string|null $field        hidden field name; null means the config value
+     * @param string|null $url          explicit endpoint URL that overrides the route
+     * @param bool        $autostart    when true, PoW solves immediately (no checkbox)
+     * @param bool        $noWorker     when true, force main-thread PoW (disable Worker)
+     * @param string|null $label        shorthand idle label ("I'm not a robot")
+     * @param string|null $labelLoading loading-phase copy
+     * @param string|null $labelIdle    idle checkbox copy (wins over $label)
+     * @param string|null $labelSolving solving-phase copy
+     * @param string|null $labelSolved  success copy
+     * @param string|null $labelError   error copy
+     * @param string|null $labelAria    checkbox aria-label
      */
     public function __construct(
         public string $type = '',
@@ -28,6 +35,13 @@ final class TuringComponent extends Component
         public ?string $url = null,
         public bool $autostart = false,
         public bool $noWorker = false,
+        public ?string $label = null,
+        public ?string $labelLoading = null,
+        public ?string $labelIdle = null,
+        public ?string $labelSolving = null,
+        public ?string $labelSolved = null,
+        public ?string $labelError = null,
+        public ?string $labelAria = null,
     ) {
     }
 
@@ -50,6 +64,21 @@ final class TuringComponent extends Component
         }
         if ($this->noWorker) {
             $attrs['data-turing-no-worker'] = true;
+        }
+
+        $labelMap = [
+            'data-turing-label' => $this->label,
+            'data-turing-label-loading' => $this->labelLoading,
+            'data-turing-label-idle' => $this->labelIdle,
+            'data-turing-label-solving' => $this->labelSolving,
+            'data-turing-label-solved' => $this->labelSolved,
+            'data-turing-label-error' => $this->labelError,
+            'data-turing-label-aria' => $this->labelAria,
+        ];
+        foreach ($labelMap as $name => $value) {
+            if ($value !== null && $value !== '') {
+                $attrs[$name] = $value;
+            }
         }
 
         $parts = [];

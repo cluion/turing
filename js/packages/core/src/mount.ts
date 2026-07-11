@@ -8,6 +8,50 @@ export interface MountOptions {
   signal?: AbortSignal;
 }
 
+/** User-facing strings for the PoW widget; all overridable via data-* attributes. */
+export interface TuringLabels {
+  loading: string;
+  idle: string;
+  solving: string;
+  solved: string;
+  error: string;
+  /** Accessible name for the checkbox. */
+  aria: string;
+}
+
+export const DEFAULT_LABELS: TuringLabels = {
+  loading: 'Loading…',
+  idle: "I'm not a robot",
+  solving: 'Verifying…',
+  solved: 'Verified',
+  error: 'Verification failed — try again',
+  aria: 'Verify you are human',
+};
+
+/**
+ * Read label overrides from the mount element.
+ * - `data-turing-label` is a shorthand for the idle (checkbox) line.
+ * - `data-turing-label-{loading,idle,solving,solved,error,aria}` override each phase.
+ * Specific keys win over the idle shorthand.
+ */
+export function readLabels(el: HTMLElement): TuringLabels {
+  const shorthand = el.getAttribute('data-turing-label');
+  const pick = (key: keyof TuringLabels, attr: string): string => {
+    const v = el.getAttribute(attr);
+    if (v !== null && v !== '') return v;
+    if (key === 'idle' && shorthand !== null && shorthand !== '') return shorthand;
+    return DEFAULT_LABELS[key];
+  };
+  return {
+    loading: pick('loading', 'data-turing-label-loading'),
+    idle: pick('idle', 'data-turing-label-idle'),
+    solving: pick('solving', 'data-turing-label-solving'),
+    solved: pick('solved', 'data-turing-label-solved'),
+    error: pick('error', 'data-turing-label-error'),
+    aria: pick('aria', 'data-turing-label-aria'),
+  };
+}
+
 /**
  * Mount onto a single [data-turing] container: fetch a challenge, solve PoW or
  * show the image, then inject the packed token into the enclosing form.
@@ -15,6 +59,7 @@ export interface MountOptions {
  * PoW defaults to an interactive checkbox UI (idle → solving → solved). Pass
  * `data-turing-autostart` to solve immediately without a click. Web Workers are
  * on by default for PoW; set `data-turing-no-worker` to force the main thread.
+ * Status copy is overridable via `data-turing-label*` attributes.
  */
 export async function mount(el: HTMLElement, opts: MountOptions = {}): Promise<void> {
   const url = el.getAttribute('data-turing-url');
@@ -28,6 +73,7 @@ export async function mount(el: HTMLElement, opts: MountOptions = {}): Promise<v
   // Fall back on an empty attribute too, so data-turing-field="" cannot target
   // a nameless input; the '' name is never what an integrator intends.
   const field = el.getAttribute('data-turing-field') || 'turing_token';
+  const labels = readLabels(el);
   const enclosingForm = el.closest('form');
   if (!enclosingForm) {
     // Without an enclosing <form> the hidden token input is never submitted, so
@@ -37,17 +83,17 @@ export async function mount(el: HTMLElement, opts: MountOptions = {}): Promise<v
   const form = enclosingForm ?? el;
 
   setState(el, 'loading');
-  setStatusLabel(el, 'Loading…');
+  setStatusLabel(el, labels.loading);
 
   const challenge = await fetchChallenge(url, type);
 
   if (challenge.type === 'pow' && challenge.params) {
     if (autostart) {
-      await runPowSolve(el, form as HTMLElement, field, challenge, useWorker, opts.signal);
+      await runPowSolve(el, form as HTMLElement, field, challenge, useWorker, labels, opts.signal);
       return;
     }
     // Interactive: build the checkbox UI and return; solve starts on user action.
-    renderPowIdle(el, form as HTMLElement, field, challenge, useWorker, opts.signal);
+    renderPowIdle(el, form as HTMLElement, field, challenge, useWorker, labels, opts.signal);
     return;
   }
 
@@ -81,20 +127,21 @@ async function runPowSolve(
   field: string,
   challenge: Challenge,
   useWorker: boolean,
+  labels: TuringLabels,
   signal?: AbortSignal,
 ): Promise<void> {
   setState(el, 'solving');
-  setStatusLabel(el, 'Verifying…');
+  setStatusLabel(el, labels.solving);
   lockCheckbox(el, true, true);
   try {
     const counter = await solvePow(challenge.params as Record<string, unknown>, useWorker, signal);
     injectToken(field, pack(challenge.token, String(counter)), form);
     setState(el, 'solved');
-    setStatusLabel(el, 'Verified');
+    setStatusLabel(el, labels.solved);
     lockCheckbox(el, true, true);
     el.dispatchEvent(new CustomEvent('turing:solved', { bubbles: true }));
   } catch (error: unknown) {
-    markError(el, error);
+    markError(el, error, labels);
     throw error;
   }
 }
@@ -109,6 +156,7 @@ function renderPowIdle(
   field: string,
   challenge: Challenge,
   useWorker: boolean,
+  labels: TuringLabels,
   signal?: AbortSignal,
 ): void {
   el.replaceChildren();
@@ -117,20 +165,20 @@ function renderPowIdle(
   const widget = document.createElement('div');
   widget.setAttribute('data-turing-widget', '');
 
-  const label = document.createElement('label');
-  label.setAttribute('data-turing-label', '');
+  const labelEl = document.createElement('label');
+  labelEl.setAttribute('data-turing-label', '');
 
   const check = document.createElement('input');
   check.type = 'checkbox';
   check.setAttribute('data-turing-check', '');
-  check.setAttribute('aria-label', 'Verify you are human');
+  check.setAttribute('aria-label', labels.aria);
 
   const status = document.createElement('span');
   status.setAttribute('data-turing-status', '');
-  status.textContent = "I'm not a robot";
+  status.textContent = labels.idle;
 
-  label.append(check, status);
-  widget.appendChild(label);
+  labelEl.append(check, status);
+  widget.appendChild(labelEl);
   el.appendChild(widget);
 
   let running = false;
@@ -141,7 +189,7 @@ function renderPowIdle(
       return;
     }
     running = true;
-    void runPowSolve(el, form, field, challenge, useWorker, signal).catch(() => {
+    void runPowSolve(el, form, field, challenge, useWorker, labels, signal).catch(() => {
       running = false;
       // Offer retry: unlock checkbox, keep error state label until next attempt.
       const retry = el.querySelector<HTMLInputElement>('[data-turing-check]');
@@ -149,20 +197,21 @@ function renderPowIdle(
         retry.disabled = false;
         retry.checked = false;
       }
-      // Re-bind is unnecessary; change handler stays. Re-fetch a fresh challenge
-      // on retry so a spent/expired token cannot be reused after a failed attempt.
+      // Re-fetch a fresh challenge so a spent/expired token cannot be reused.
       void fetchChallenge(
         el.getAttribute('data-turing-url') as string,
         el.getAttribute('data-turing-type') ?? undefined,
-      ).then((fresh) => {
-        if (fresh.type === 'pow' && fresh.params) {
-          Object.assign(challenge, fresh);
-          setState(el, 'idle');
-          setStatusLabel(el, "I'm not a robot");
-        }
-      }).catch(() => {
-        /* keep error label from markError */
-      });
+      )
+        .then((fresh) => {
+          if (fresh.type === 'pow' && fresh.params) {
+            Object.assign(challenge, fresh);
+            setState(el, 'idle');
+            setStatusLabel(el, labels.idle);
+          }
+        })
+        .catch(() => {
+          /* keep error label from markError */
+        });
     });
   });
 }
@@ -255,9 +304,10 @@ function lockCheckbox(el: HTMLElement, checked: boolean, disabled: boolean): voi
   check.disabled = disabled;
 }
 
-function markError(el: HTMLElement, error: unknown): void {
+function markError(el: HTMLElement, error: unknown, labels?: TuringLabels): void {
+  const copy = labels ?? readLabels(el);
   setState(el, 'error');
-  setStatusLabel(el, 'Verification failed — try again');
+  setStatusLabel(el, copy.error);
   lockCheckbox(el, false, false);
   el.dispatchEvent(new CustomEvent('turing:error', { bubbles: true, detail: { error } }));
 }

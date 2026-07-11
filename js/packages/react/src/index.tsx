@@ -10,6 +10,14 @@ export interface TuringProps {
   autostart?: boolean;
   /** Force main-thread PoW (disable Web Worker). */
   noWorker?: boolean;
+  /** Shorthand idle checkbox label ("I'm not a robot"). */
+  label?: string;
+  labelLoading?: string;
+  labelIdle?: string;
+  labelSolving?: string;
+  labelSolved?: string;
+  labelError?: string;
+  labelAria?: string;
   onSolved?: () => void;
   onError?: (error: unknown) => void;
   onReady?: () => void;
@@ -19,7 +27,23 @@ export interface TuringProps {
  * Renders the turing-captcha custom element and wires its events to callback
  * props via a ref effect (portable across React 18/19).
  */
-export function Turing({ url, type, field, autostart, noWorker, onSolved, onError, onReady }: TuringProps) {
+export function Turing({
+  url,
+  type,
+  field,
+  autostart,
+  noWorker,
+  label,
+  labelLoading,
+  labelIdle,
+  labelSolving,
+  labelSolved,
+  labelError,
+  labelAria,
+  onSolved,
+  onError,
+  onReady,
+}: TuringProps) {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -43,5 +67,12 @@ export function Turing({ url, type, field, autostart, noWorker, onSolved, onErro
     field,
     ...(autostart ? { autostart: '' } : {}),
     ...(noWorker ? { 'no-worker': '' } : {}),
+    ...(label ? { label } : {}),
+    ...(labelLoading ? { 'label-loading': labelLoading } : {}),
+    ...(labelIdle ? { 'label-idle': labelIdle } : {}),
+    ...(labelSolving ? { 'label-solving': labelSolving } : {}),
+    ...(labelSolved ? { 'label-solved': labelSolved } : {}),
+    ...(labelError ? { 'label-error': labelError } : {}),
+    ...(labelAria ? { 'label-aria': labelAria } : {}),
   });
 }

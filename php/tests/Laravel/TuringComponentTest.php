@@ -49,4 +49,22 @@ final class TuringComponentTest extends TestCase
         self::assertStringContainsString('data-turing-autostart', $html);
         self::assertStringContainsString('data-turing-no-worker', $html);
     }
+
+    /**
+     * Custom labels map to data-turing-label* attributes and are HTML-escaped.
+     */
+    public function test_label_props(): void
+    {
+        $html = (new TuringComponent(
+            type: 'pow',
+            label: '我不是機器人',
+            labelSolving: '驗證中…',
+            labelSolved: '已通過',
+            labelError: '失敗 <重試>',
+        ))->render()->toHtml();
+        self::assertStringContainsString('data-turing-label="我不是機器人"', $html);
+        self::assertStringContainsString('data-turing-label-solving="驗證中…"', $html);
+        self::assertStringContainsString('data-turing-label-solved="已通過"', $html);
+        self::assertStringContainsString('data-turing-label-error="失敗 &lt;重試&gt;"', $html);
+    }
 }
