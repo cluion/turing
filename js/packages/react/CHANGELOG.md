@@ -1,5 +1,13 @@
 # @cluion/turing-react
 
+## 0.3.1
+
+### Patch Changes
+
+- Math/text refresh control and Laravel stable verify failure log codes (wrong_answer, expired, already_used, …).
+- Updated dependencies
+  - @cluion/turing-element@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes

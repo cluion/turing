@@ -1,5 +1,11 @@
 # @cluion/turing-core
 
+## 0.3.1
+
+### Patch Changes
+
+- Math/text refresh control and Laravel stable verify failure log codes (wrong_answer, expired, already_used, …).
+
 ## 0.3.0
 
 ### Minor Changes

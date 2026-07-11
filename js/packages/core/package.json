@@ -1,6 +1,6 @@
 {
   "name": "@cluion/turing-core",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Headless client core for the Turing captcha (fetch, PoW, inject).",
   "license": "MIT",
   "type": "module",
