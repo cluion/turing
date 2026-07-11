@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Cluion\Turing\Tests\Core\Image;
 
+use Cluion\Turing\Core\Charset\DefaultCharset;
+use Cluion\Turing\Core\Image\GlyphPaths;
 use Cluion\Turing\Core\Image\SvgRenderer;
 use PHPUnit\Framework\TestCase;
 
@@ -21,40 +23,79 @@ final class SvgRendererTest extends TestCase
     }
 
     /**
-     * Humans must be able to read the challenge — each character is a <text> glyph.
+     * Glyphs are stroked paths — never <text> — so F12 cannot copy the answer.
      */
-    public function test_answer_characters_are_rendered_as_text(): void
+    public function test_answer_is_not_inspectable_as_dom_text(): void
     {
-        $svg = (new SvgRenderer())->render('AB23');
-        self::assertStringContainsString('<text', $svg);
-        self::assertStringContainsString('>A</text>', $svg);
-        self::assertStringContainsString('>B</text>', $svg);
-        self::assertStringContainsString('>2</text>', $svg);
-        self::assertStringContainsString('>3</text>', $svg);
+        $secret = 'YEYG8';
+        $svg = (new SvgRenderer())->render($secret);
+
+        self::assertStringNotContainsString('<text', $svg);
+        self::assertStringNotContainsString('</text>', $svg);
+        // No character of the secret appears as SVG text content.
+        foreach (str_split($secret) as $ch) {
+            self::assertStringNotContainsString('>' . $ch . '<', $svg);
+            self::assertStringNotContainsString('>' . $ch . '</', $svg);
+        }
+        self::assertStringNotContainsString($secret, $svg);
+        // But each glyph still produced a path.
+        self::assertSame(5, substr_count($svg, '<path '));
     }
 
     /**
-     * Math expressions render operators and keep a light background for contrast.
+     * Math expressions render operator/digit paths and keep a light background.
      */
     public function test_math_expression_and_background(): void
     {
         $svg = (new SvgRenderer())->render('3 + 4');
-        self::assertStringContainsString('>3</text>', $svg);
-        self::assertStringContainsString('>+</text>', $svg);
-        self::assertStringContainsString('>4</text>', $svg);
+        self::assertStringNotContainsString('<text', $svg);
+        self::assertStringNotContainsString('>3<', $svg);
+        self::assertStringNotContainsString('>+<', $svg);
         self::assertStringContainsString('fill="#f4f4f5"', $svg);
+        self::assertStringContainsString('<path ', $svg);
         self::assertStringContainsString('<line', $svg);
+        // three non-space characters → three paths
+        self::assertSame(3, substr_count($svg, '<path '));
     }
 
     /**
-     * XML-special characters are escaped so the SVG stays well-formed.
+     * Every DefaultCharset letter has a path definition.
      */
-    public function test_escapes_xml_special_characters(): void
+    public function test_default_charset_alphabet_has_glyphs(): void
+    {
+        foreach ((new DefaultCharset())->alphabet() as $ch) {
+            self::assertNotNull(
+                GlyphPaths::pathFor($ch),
+                "missing glyph for charset character {$ch}",
+            );
+        }
+    }
+
+    /**
+     * Unknown characters become neutral blocks; raw code points are not emitted.
+     */
+    public function test_unknown_characters_do_not_leak_as_text(): void
     {
         $svg = (new SvgRenderer())->render('<&>');
-        self::assertStringNotContainsString('><&></text>', $svg);
-        self::assertStringContainsString('&lt;', $svg);
-        self::assertStringContainsString('&amp;', $svg);
-        self::assertStringContainsString('&gt;', $svg);
+        self::assertStringNotContainsString('<text', $svg);
+        // Input was not HTML-escaped into the SVG (that would still leak intent).
+        self::assertStringNotContainsString('&lt;', $svg);
+        self::assertStringNotContainsString('&amp;', $svg);
+        self::assertStringNotContainsString('&gt;', $svg);
+        // Three unknown code points → three placeholder rects (plus the background rect).
+        self::assertSame(4, substr_count($svg, '<rect'));
+    }
+
+    /**
+     * Lowercase input uses the same uppercase path set (case-insensitive glyphs).
+     */
+    public function test_lowercase_maps_to_uppercase_paths(): void
+    {
+        $upper = (new SvgRenderer())->render('AB');
+        $lower = (new SvgRenderer())->render('ab');
+        self::assertSame(2, substr_count($upper, '<path '));
+        self::assertSame(2, substr_count($lower, '<path '));
+        self::assertStringNotContainsString('>a<', $lower);
+        self::assertStringNotContainsString('>b<', $lower);
     }
 }

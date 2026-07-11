@@ -4,15 +4,15 @@ declare(strict_types=1);
 namespace Cluion\Turing\Core\Image;
 
 /**
- * Zero-extension SVG renderer. Each character is drawn as a rotated/jittered
- * <text> glyph (readable by humans) plus noise lines for light OCR friction.
- * Glyph outlines as pure shapes remain a later refinement; v1 prioritises a
- * captcha a person can actually solve over anti-scrape purity.
+ * Zero-extension SVG renderer. Each character is drawn as a stroked path glyph
+ * (never a <text> node), with per-glyph rotation/jitter and noise lines.
+ * Path strokes keep the answer out of DOM text content while remaining
+ * human-readable at typical captcha sizes.
  */
 final class SvgRenderer implements ImageRenderer
 {
     /**
-     * Draw each character as distorted SVG text plus noise, wrapped in an
+     * Draw each character as a distorted path glyph plus noise, wrapped in an
      * <svg> element. Width expands when the string is longer than the default
      * canvas can hold (e.g. math expressions like "9 + 8").
      */
@@ -25,30 +25,52 @@ final class SvgRenderer implements ImageRenderer
         $len = max(1, count($chars));
         $charW = 22;
         $canvasW = max($width, $len * $charW + 8);
-        $fontSize = max(16, $height - 12);
+        // Scale unit cell (10×14) into the per-character slot with padding.
+        $scale = min(($charW - 4) / GlyphPaths::CELL_W, ($height - 8) / GlyphPaths::CELL_H);
 
         $glyphs = '';
         $i = 0;
         foreach ($chars as $ch) {
-            $x = 6 + $i * $charW;
+            $slotX = 4 + $i * $charW;
             $i++;
-            // Spaces advance the cursor but draw nothing.
-            if ($ch === ' ') {
+            if (GlyphPaths::isSpacer($ch)) {
                 continue;
             }
-            $rot = random_int(-18, 18);
-            $dy = random_int(-3, 3);
-            $y = (int) ($height * 0.72) + $dy;
-            $glyphs .= sprintf(
-                '<text x="%d" y="%d" transform="rotate(%d %d %d)" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="%d" font-weight="700" fill="#1a1a1a">%s</text>',
-                $x,
-                $y,
-                $rot,
-                $x,
-                $y,
-                $fontSize,
-                $this->escape($ch),
-            );
+
+            $d = GlyphPaths::pathFor($ch);
+            $rot = random_int(-16, 16);
+            $dx = random_int(-1, 1);
+            $dy = random_int(-2, 2);
+            $cx = $slotX + $charW / 2 + $dx;
+            $cy = $height / 2 + $dy;
+            // Centre the unit cell on (cx, cy), then rotate around that point.
+            $tx = $cx - (GlyphPaths::CELL_W * $scale) / 2;
+            $ty = $cy - (GlyphPaths::CELL_H * $scale) / 2;
+
+            if ($d !== null) {
+                $glyphs .= sprintf(
+                    '<g transform="rotate(%d %.2f %.2f) translate(%.2f %.2f) scale(%.3f)">'
+                    . '<path d="%s" fill="none" stroke="#1a1a1a" stroke-width="1.6" '
+                    . 'stroke-linecap="round" stroke-linejoin="round"/>'
+                    . '</g>',
+                    $rot,
+                    $cx,
+                    $cy,
+                    $tx,
+                    $ty,
+                    $scale,
+                    $d,
+                );
+            } else {
+                // Unknown character: neutral block, never emit the raw code point.
+                $glyphs .= sprintf(
+                    '<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" rx="2" fill="none" stroke="#1a1a1a" stroke-width="1.5"/>',
+                    $slotX + 3,
+                    8 + $dy,
+                    $charW - 8,
+                    $height - 16,
+                );
+            }
         }
 
         $noise = '';
@@ -62,7 +84,7 @@ final class SvgRenderer implements ImageRenderer
             );
         }
 
-        // Opaque light background so dark glyphs stay readable on dark pages.
+        // Opaque light background so dark strokes stay readable on dark pages.
         return sprintf(
             '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d" role="img" aria-label="captcha"><rect width="100%%" height="100%%" fill="#f4f4f5"/>%s%s</svg>',
             $canvasW,
@@ -72,13 +94,5 @@ final class SvgRenderer implements ImageRenderer
             $glyphs,
             $noise,
         );
-    }
-
-    /**
-     * Escape a single character for safe inclusion in SVG/XML text content.
-     */
-    private function escape(string $value): string
-    {
-        return htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 }
