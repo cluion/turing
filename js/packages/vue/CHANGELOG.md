@@ -1,5 +1,16 @@
 # @cluion/turing-vue
 
+## 1.0.0
+
+### Major Changes
+
+- 1.0.0 stable: self-hosted captcha with PoW, math/text, Laravel 10–13, and documented client APIs.
+
+### Patch Changes
+
+- Updated dependencies
+  - @cluion/turing-element@1.0.0
+
 ## 0.3.1
 
 ### Patch Changes

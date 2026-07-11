@@ -1,6 +1,6 @@
 {
   "name": "@cluion/turing-vue",
-  "version": "0.3.1",
+  "version": "1.0.0",
   "description": "<Turing> Vue component for the Turing captcha.",
   "license": "MIT",
   "type": "module",

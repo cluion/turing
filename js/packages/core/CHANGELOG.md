@@ -1,5 +1,11 @@
 # @cluion/turing-core
 
+## 1.0.0
+
+### Major Changes
+
+- 1.0.0 stable: self-hosted captcha with PoW, math/text, Laravel 10–13, and documented client APIs.
+
 ## 0.3.1
 
 ### Patch Changes
