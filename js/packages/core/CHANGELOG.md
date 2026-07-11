@@ -1,5 +1,11 @@
 # @cluion/turing-core
 
+## 0.3.0
+
+### Minor Changes
+
+- PoW difficulty profiles (interactive/balanced/strict), classic-captcha migration guide, and Laravel 13 support (illuminate/support ^13, CI matrix).
+
 ## 0.2.0
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # @cluion/turing-vue
 
+## 0.3.0
+
+### Minor Changes
+
+- PoW difficulty profiles (interactive/balanced/strict), classic-captcha migration guide, and Laravel 13 support (illuminate/support ^13, CI matrix).
+
+### Patch Changes
+
+- Updated dependencies
+  - @cluion/turing-element@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
