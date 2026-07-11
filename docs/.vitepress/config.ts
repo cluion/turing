@@ -27,6 +27,7 @@ export default defineConfig({
             text: 'Guide',
             items: [
               { text: 'Laravel', link: '/guide/laravel' },
+              { text: 'Security', link: '/guide/security' },
               { text: 'Migrating', link: '/guide/migrating' },
               { text: 'Plain HTML', link: '/guide/plain-html' },
               { text: 'Vue', link: '/guide/vue' },
@@ -59,7 +60,8 @@ export default defineConfig({
             text: '指南',
             items: [
               { text: 'Laravel', link: '/zh/guide/laravel' },
-              { text: '遷移指南', link: '/zh/guide/migrating' },
+              { text: '安全', link: '/zh/guide/security' },
+              { text: '遷移', link: '/zh/guide/migrating' },
               { text: '純 HTML', link: '/zh/guide/plain-html' },
               { text: 'Vue', link: '/zh/guide/vue' },
               { text: 'React', link: '/zh/guide/react' },
@@ -68,7 +70,7 @@ export default defineConfig({
           {
             text: '參考',
             items: [
-              { text: 'Wire contract（線上協定）', link: '/zh/reference/wire-contract' },
+              { text: 'Wire contract', link: '/zh/reference/wire-contract' },
               { text: '屬性與 props', link: '/zh/reference/attributes' },
             ],
           },

@@ -58,8 +58,8 @@ challenge、注入一個隱藏的 `turing_token` input。
 
 ## 支援的 Laravel 版本
 
-整合層支援 **Laravel 10、11、12、13**（`illuminate/support` `^10 || ^11 || ^12 || ^13`）。
-CI 對各大版跑 PHPUnit。
+Laravel **10–13**（`illuminate/support` `^10 || ^11 || ^12 || ^13`）。CI 對各大版
+跑 PHPUnit。
 
 ## 驗證送出
 

@@ -72,7 +72,8 @@ import '@cluion/turing-core'; // 自動掛載每個 [data-turing] 容器
 可直接開來跑的純 HTML 範例在
 [`examples/plain-html/index.html`](examples/plain-html/index.html)。各框架指南:
 [Laravel](docs/guide/laravel.md) · [純 HTML](docs/guide/plain-html.md) ·
-[Vue](docs/guide/vue.md) · [React](docs/guide/react.md)。
+[Vue](docs/guide/vue.md) · [React](docs/guide/react.md) ·
+[安全](docs/guide/security.md)。
 
 ## Core
 

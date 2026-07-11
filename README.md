@@ -75,7 +75,8 @@ import '@cluion/turing-core'; // auto-mounts every [data-turing] container
 A runnable plain-HTML page is in
 [`examples/plain-html/index.html`](examples/plain-html/index.html). Framework
 guides: [Laravel](docs/guide/laravel.md) · [Plain HTML](docs/guide/plain-html.md)
-· [Vue](docs/guide/vue.md) · [React](docs/guide/react.md).
+· [Vue](docs/guide/vue.md) · [React](docs/guide/react.md) ·
+[Security](docs/guide/security.md).
 
 ## Core
 

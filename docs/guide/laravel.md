@@ -86,6 +86,5 @@ Replacing an older image/session captcha? See [Migrating](/guide/migrating).
 
 ## Supported Laravel versions
 
-Turing’s Laravel integration targets **Laravel 10, 11, 12, and 13**
-(`illuminate/support` `^10 || ^11 || ^12 || ^13`). CI runs the PHPUnit suite on
-each major.
+Laravel **10–13** (`illuminate/support` `^10 || ^11 || ^12 || ^13`). CI runs
+PHPUnit on each major.
