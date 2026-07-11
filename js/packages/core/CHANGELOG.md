@@ -1,5 +1,11 @@
 # @cluion/turing-core
 
+## 0.1.3
+
+### Patch Changes
+
+- Interactive PoW checkbox UI (autostart optional), Worker-by-default with inline fallback for IIFE/CDN, and customizable status labels across core, Blade, Vue, and React.
+
 ## 0.1.2
 
 ### Patch Changes
