@@ -22,8 +22,8 @@ swap the script (the `sha384` hash is generated after the first publish — see
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.1/dist/turing.global.js"
-  integrity="sha384-0WKVmXwyonAwsqfst4Ajw1TMbWhEI9qBiHDjQX84v82Hl/gby8ZTNH+NKlKMtqse"
+  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.2/dist/turing.global.js"
+  integrity="sha384-aW7oySKgbHetDA/gXWt03vSQLONWdwQ1/L97BQaeN7E1IQkMcXsC0xTt0cvAjZZy"
   crossorigin="anonymous"
   defer></script>
 
@@ -50,6 +50,6 @@ npm view @cluion/turing-core version
 curl -sI https://unpkg.com/@cluion/turing-core/dist/turing.global.js | head -1
 
 # generate the SRI hash for the docs (paste into the <script integrity=...>)
-curl -s https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.1/dist/turing.global.js \
+curl -s https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.2/dist/turing.global.js \
   | openssl dgst -sha384 -binary | openssl base64 -A | sed 's/^/sha384-/'
 ```

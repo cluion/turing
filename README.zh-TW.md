@@ -36,8 +36,8 @@ php artisan vendor:publish --tag=turing-config   # 接著設定 TURING_SECRET
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.1/dist/turing.global.js"
-  integrity="sha384-0WKVmXwyonAwsqfst4Ajw1TMbWhEI9qBiHDjQX84v82Hl/gby8ZTNH+NKlKMtqse"
+  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.2/dist/turing.global.js"
+  integrity="sha384-aW7oySKgbHetDA/gXWt03vSQLONWdwQ1/L97BQaeN7E1IQkMcXsC0xTt0cvAjZZy"
   crossorigin="anonymous"
   defer></script>
 ```
