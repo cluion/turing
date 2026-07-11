@@ -9,26 +9,35 @@ underlying behaviour.
 Read by `@cluion/turing-core` on mount. The Laravel `<x-turing>` component and
 the Web Component emit these for you.
 
-| Attribute            | Required | Description |
-|----------------------|----------|-------------|
-| `data-turing`        | yes      | Marks the mount container. |
-| `data-turing-url`    | yes      | Challenge endpoint URL. |
-| `data-turing-type`   | no       | Challenge type, e.g. `pow`. Omit for the server default. |
-| `data-turing-field`  | no       | Hidden input name. Default `turing_token`. |
-| `data-turing-worker` | no       | Presence opts the PoW solve into a Web Worker (falls back to inline when Worker is unavailable). |
+| Attribute                | Required | Description |
+|--------------------------|----------|-------------|
+| `data-turing`            | yes      | Marks the mount container. |
+| `data-turing-url`        | yes      | Challenge endpoint URL. |
+| `data-turing-type`       | no       | Challenge type, e.g. `pow`. Omit for the server default. |
+| `data-turing-field`      | no       | Hidden input name. Default `turing_token`. |
+| `data-turing-autostart`  | no       | PoW only: solve immediately (no checkbox). Default is interactive UI. |
+| `data-turing-no-worker`  | no       | PoW only: force main-thread solve. **Workers are on by default.** |
 
-State is reflected on `data-turing-state` (`solved` / `error`).
+State is reflected on `data-turing-state`:
+
+| State | Meaning |
+|-------|---------|
+| `loading` | Fetching the challenge. |
+| `idle` | PoW checkbox shown; waiting for the user. |
+| `solving` | PoW in progress. |
+| `solved` | Token injected (PoW done, or image answer typed). |
+| `ready` | Image challenge ready for user input. |
+| `error` | Fetch/solve failed. |
 
 ## `<turing-captcha>` element & `<Turing>` wrappers
-
-The [Web Component](/guide/plain-html) and the [Vue](/guide/vue) /
-[React](/guide/react) wrappers take the same three inputs:
 
 | Prop / attribute | Required | Maps to |
 |------------------|----------|---------|
 | `url`            | yes      | `data-turing-url` |
 | `type`           | no       | `data-turing-type` |
 | `field`          | no       | `data-turing-field` |
+| `autostart`      | no       | `data-turing-autostart` |
+| `no-worker`      | no       | `data-turing-no-worker` |
 
 Outcomes surface as events (Web Component / Vue) or callback props (React):
 
@@ -36,6 +45,21 @@ Outcomes surface as events (Web Component / Vue) or callback props (React):
 |---------------------|------------|------|
 | `turing:solved`     | `onSolved` | Token injected into the form. |
 | `turing:error`      | `onError`  | Fetch/solve/validation failed (carries the error). |
+| `turing:ready`      | —          | Image challenge painted (math/text). |
 
 All wrappers render in **light DOM** so the injected hidden input stays inside
 the enclosing `<form>` and submits normally.
+
+## Laravel `<x-turing>`
+
+```blade
+<x-turing type="pow" />
+<x-turing type="pow" autostart />
+<x-turing type="pow" :no-worker="true" />
+```
+
+| Prop | Maps to |
+|------|---------|
+| `type` / `field` / `url` | same as above |
+| `autostart` | `data-turing-autostart` |
+| `noWorker` (`no-worker` in Blade) | `data-turing-no-worker` |

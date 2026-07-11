@@ -9,8 +9,9 @@ return [
     // Pepper for hashing answers. Optional: derived from the secret when unset.
     'pepper' => env('TURING_PEPPER'),
 
-    // Default challenge type when none is requested.
-    'default' => 'math',
+    // Default challenge type when none is requested. PoW is the modern default;
+    // math/text are convenience-grade alternatives.
+    'default' => 'pow',
 
     // Per-type config passed through to each Core challenge type.
     'types' => [

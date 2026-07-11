@@ -19,6 +19,7 @@ final class TuringComponentTest extends TestCase
         self::assertStringContainsString('data-turing-field="turing_token"', $html);
         self::assertStringContainsString('data-turing-url="', $html);
         self::assertStringContainsString('/turing/challenge', $html);
+        self::assertStringNotContainsString('data-turing-autostart', $html);
     }
 
     /**
@@ -31,11 +32,21 @@ final class TuringComponentTest extends TestCase
     }
 
     /**
-     * With no type, the component falls back to the configured default.
+     * With no type, the component falls back to the configured default (pow).
      */
     public function test_defaults_type_from_config(): void
     {
         $html = (new TuringComponent())->render()->toHtml();
-        self::assertStringContainsString('data-turing-type="math"', $html);
+        self::assertStringContainsString('data-turing-type="pow"', $html);
+    }
+
+    /**
+     * Optional PoW UX flags map to data attributes.
+     */
+    public function test_autostart_and_no_worker_flags(): void
+    {
+        $html = (new TuringComponent(type: 'pow', autostart: true, noWorker: true))->render()->toHtml();
+        self::assertStringContainsString('data-turing-autostart', $html);
+        self::assertStringContainsString('data-turing-no-worker', $html);
     }
 }

@@ -16,14 +16,18 @@ use Illuminate\View\Component;
 final class TuringComponent extends Component
 {
     /**
-     * @param string      $type  challenge type; empty means the config default
-     * @param string|null $field hidden field name; null means the config value
-     * @param string|null $url   explicit endpoint URL that overrides the route
+     * @param string      $type      challenge type; empty means the config default
+     * @param string|null $field     hidden field name; null means the config value
+     * @param string|null $url       explicit endpoint URL that overrides the route
+     * @param bool        $autostart when true, PoW solves immediately (no checkbox)
+     * @param bool        $noWorker  when true, force main-thread PoW (disable Worker)
      */
     public function __construct(
         public string $type = '',
         public ?string $field = null,
         public ?string $url = null,
+        public bool $autostart = false,
+        public bool $noWorker = false,
     ) {
     }
 
@@ -32,17 +36,32 @@ final class TuringComponent extends Component
      */
     public function render(): Htmlable
     {
-        $type = $this->type !== '' ? $this->type : (string) config('turing.default', 'math');
+        $type = $this->type !== '' ? $this->type : (string) config('turing.default', 'pow');
         $field = $this->field ?? (string) config('turing.field', 'turing_token');
 
-        $html = sprintf(
-            '<div data-turing data-turing-url="%s" data-turing-type="%s" data-turing-field="%s"></div>',
-            $this->escape($this->resolveUrl()),
-            $this->escape($type),
-            $this->escape($field),
-        );
+        $attrs = [
+            'data-turing' => true,
+            'data-turing-url' => $this->resolveUrl(),
+            'data-turing-type' => $type,
+            'data-turing-field' => $field,
+        ];
+        if ($this->autostart) {
+            $attrs['data-turing-autostart'] = true;
+        }
+        if ($this->noWorker) {
+            $attrs['data-turing-no-worker'] = true;
+        }
 
-        return new HtmlString($html);
+        $parts = [];
+        foreach ($attrs as $name => $value) {
+            if ($value === true) {
+                $parts[] = $name;
+            } else {
+                $parts[] = sprintf('%s="%s"', $name, $this->escape((string) $value));
+            }
+        }
+
+        return new HtmlString('<div ' . implode(' ', $parts) . '></div>');
     }
 
     /**

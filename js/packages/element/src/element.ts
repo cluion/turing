@@ -5,11 +5,15 @@ import { mount } from '@cluion/turing-core';
  * that renders a light-DOM container, mounts the Turing core onto it, and
  * re-emits the outcome as turing:solved / turing:error events. Light DOM keeps
  * the injected hidden input inside the surrounding form so it is submitted.
+ *
+ * Optional attributes: autostart (data-turing-autostart), no-worker
+ * (data-turing-no-worker).
  */
 export class TuringCaptchaElement extends HTMLElement {
   /**
    * On connect, build (once) the [data-turing] container from this element's
-   * attributes and run the core mount, reflecting the result as state + events.
+   * attributes and run the core mount. Outcomes are re-emitted from core events
+   * (PoW may wait for a checkbox click before turing:solved).
    */
   connectedCallback(): void {
     const url = this.getAttribute('url');
@@ -18,12 +22,22 @@ export class TuringCaptchaElement extends HTMLElement {
       return;
     }
     const container = this.ensureContainer(url);
-    mount(container)
-      .then(() => {
-        this.setAttribute('data-turing-state', 'solved');
-        this.dispatchEvent(new CustomEvent('turing:solved', { bubbles: true }));
-      })
-      .catch((error: unknown) => this.dispatchError(error));
+
+    // Re-emit core outcomes on the host element for Vue/React wrappers.
+    container.addEventListener('turing:solved', () => {
+      this.setAttribute('data-turing-state', 'solved');
+      this.dispatchEvent(new CustomEvent('turing:solved', { bubbles: true }));
+    });
+    container.addEventListener('turing:error', ((e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      this.dispatchError(detail?.error ?? new Error('turing error'));
+    }) as EventListener);
+    container.addEventListener('turing:ready', () => {
+      this.setAttribute('data-turing-state', 'ready');
+      this.dispatchEvent(new CustomEvent('turing:ready', { bubbles: true }));
+    });
+
+    mount(container).catch((error: unknown) => this.dispatchError(error));
   }
 
   /**
@@ -42,6 +56,17 @@ export class TuringCaptchaElement extends HTMLElement {
     if (type) container.setAttribute('data-turing-type', type);
     const field = this.getAttribute('field');
     if (field) container.setAttribute('data-turing-field', field);
+    // Boolean attrs on the host → data-* on the container.
+    if (this.hasAttribute('autostart')) {
+      container.setAttribute('data-turing-autostart', '');
+    } else {
+      container.removeAttribute('data-turing-autostart');
+    }
+    if (this.hasAttribute('no-worker')) {
+      container.setAttribute('data-turing-no-worker', '');
+    } else {
+      container.removeAttribute('data-turing-no-worker');
+    }
     return container;
   }
 

@@ -15,6 +15,6 @@ final class SmokeTest extends TestCase
     public function test_app_boots_with_turing_config(): void
     {
         self::assertIsArray($this->app['config']->get('turing'));
-        self::assertSame('math', $this->app['config']->get('turing.default'));
+        self::assertSame('pow', $this->app['config']->get('turing.default'));
     }
 }

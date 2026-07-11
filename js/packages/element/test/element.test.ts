@@ -16,20 +16,44 @@ async function powChallenge(target: number) {
 }
 
 describe('turing-captcha', () => {
-  it('mounts on connect, injects the token into the enclosing form, emits turing:solved', async () => {
+  it('autostart: injects the token and emits turing:solved', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(await powChallenge(3)), { status: 200 }));
     const form = document.createElement('form');
     const el = document.createElement('turing-captcha') as TuringCaptchaElement;
     el.setAttribute('url', 'http://localhost/turing/challenge');
     el.setAttribute('type', 'pow');
+    el.setAttribute('autostart', '');
+    el.setAttribute('no-worker', '');
     form.appendChild(el);
 
     const solved = new Promise<CustomEvent>((r) => el.addEventListener('turing:solved', (e) => r(e as CustomEvent)));
-    document.body.appendChild(form);          // triggers connectedCallback
+    document.body.appendChild(form);
     await solved;
 
     const input = form.querySelector<HTMLInputElement>('input[name="turing_token"]');
     expect(input).not.toBeNull();
+    expect(el.getAttribute('data-turing-state')).toBe('solved');
+    vi.restoreAllMocks();
+  });
+
+  it('interactive: emits turing:solved after the checkbox is checked', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(await powChallenge(3)), { status: 200 }));
+    const form = document.createElement('form');
+    const el = document.createElement('turing-captcha') as TuringCaptchaElement;
+    el.setAttribute('url', 'http://localhost/turing/challenge');
+    el.setAttribute('type', 'pow');
+    el.setAttribute('no-worker', '');
+    form.appendChild(el);
+
+    const solved = new Promise<CustomEvent>((r) => el.addEventListener('turing:solved', (e) => r(e as CustomEvent)));
+    document.body.appendChild(form);
+    // Wait a tick for mount to paint the idle checkbox.
+    await new Promise((r) => setTimeout(r, 0));
+    const check = el.querySelector<HTMLInputElement>('[data-turing-check]')!;
+    expect(check).not.toBeNull();
+    check.checked = true;
+    check.dispatchEvent(new Event('change'));
+    await solved;
     expect(el.getAttribute('data-turing-state')).toBe('solved');
     vi.restoreAllMocks();
   });
@@ -39,6 +63,7 @@ describe('turing-captcha', () => {
     const form = document.createElement('form');
     const el = document.createElement('turing-captcha') as TuringCaptchaElement;
     el.setAttribute('url', 'http://localhost/turing/challenge');
+    el.setAttribute('autostart', '');
     form.appendChild(el);
 
     const errored = new Promise<CustomEvent>((r) => el.addEventListener('turing:error', (e) => r(e as CustomEvent)));

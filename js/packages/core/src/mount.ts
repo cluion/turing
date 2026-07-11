@@ -10,9 +10,11 @@ export interface MountOptions {
 
 /**
  * Mount onto a single [data-turing] container: fetch a challenge, solve PoW or
- * show the image, then inject the packed token into the enclosing form. Opt into
- * offloading the PoW to a Web Worker with the `data-turing-worker` attribute;
- * pass an AbortSignal via opts to cancel an in-flight solve.
+ * show the image, then inject the packed token into the enclosing form.
+ *
+ * PoW defaults to an interactive checkbox UI (idle → solving → solved). Pass
+ * `data-turing-autostart` to solve immediately without a click. Web Workers are
+ * on by default for PoW; set `data-turing-no-worker` to force the main thread.
  */
 export async function mount(el: HTMLElement, opts: MountOptions = {}): Promise<void> {
   const url = el.getAttribute('data-turing-url');
@@ -20,7 +22,9 @@ export async function mount(el: HTMLElement, opts: MountOptions = {}): Promise<v
     throw new Error('data-turing-url is required');
   }
   const type = el.getAttribute('data-turing-type') ?? undefined;
-  const useWorker = el.hasAttribute('data-turing-worker');
+  // Worker on by default; opt out with data-turing-no-worker.
+  const useWorker = !el.hasAttribute('data-turing-no-worker');
+  const autostart = el.hasAttribute('data-turing-autostart');
   // Fall back on an empty attribute too, so data-turing-field="" cannot target
   // a nameless input; the '' name is never what an integrator intends.
   const field = el.getAttribute('data-turing-field') || 'turing_token';
@@ -32,35 +36,26 @@ export async function mount(el: HTMLElement, opts: MountOptions = {}): Promise<v
   }
   const form = enclosingForm ?? el;
 
-  el.setAttribute('data-turing-state', 'loading');
+  setState(el, 'loading');
+  setStatusLabel(el, 'Loading…');
+
   const challenge = await fetchChallenge(url, type);
 
   if (challenge.type === 'pow' && challenge.params) {
-    // PoW has no image — surface progress so the mount is not an empty box.
-    setStatus(el, 'solving', 'Verifying…');
-    const counter = await solvePow(challenge.params, useWorker, opts.signal);
-    injectToken(field, pack(challenge.token, String(counter)), form as HTMLElement);
-    setStatus(el, 'solved', 'Verified');
+    if (autostart) {
+      await runPowSolve(el, form as HTMLElement, field, challenge, useWorker, opts.signal);
+      return;
+    }
+    // Interactive: build the checkbox UI and return; solve starts on user action.
+    renderPowIdle(el, form as HTMLElement, field, challenge, useWorker, opts.signal);
     return;
   }
 
   if (challenge.image) {
     renderImageChallenge(el, form as HTMLElement, field, challenge);
-    el.setAttribute('data-turing-state', 'ready');
+    setState(el, 'ready');
+    el.dispatchEvent(new CustomEvent('turing:ready', { bubbles: true }));
   }
-}
-
-/**
- * Replace the container contents with a short status line and stamp
- * data-turing-state so host CSS can style solving / solved / error.
- */
-function setStatus(el: HTMLElement, state: string, label: string): void {
-  el.setAttribute('data-turing-state', state);
-  el.replaceChildren();
-  const status = document.createElement('span');
-  status.setAttribute('data-turing-status', '');
-  status.textContent = label;
-  el.appendChild(status);
 }
 
 /**
@@ -72,8 +67,102 @@ function setStatus(el: HTMLElement, state: string, label: string): void {
 export function autoMount(root: ParentNode = document): void {
   root.querySelectorAll<HTMLElement>('[data-turing]').forEach((el) => {
     mount(el).catch((error: unknown) => {
-      el.setAttribute('data-turing-state', 'error');
-      el.dispatchEvent(new CustomEvent('turing:error', { bubbles: true, detail: { error } }));
+      markError(el, error);
+    });
+  });
+}
+
+/**
+ * Run the PoW loop, inject the token, and emit turing:solved.
+ */
+async function runPowSolve(
+  el: HTMLElement,
+  form: HTMLElement,
+  field: string,
+  challenge: Challenge,
+  useWorker: boolean,
+  signal?: AbortSignal,
+): Promise<void> {
+  setState(el, 'solving');
+  setStatusLabel(el, 'Verifying…');
+  lockCheckbox(el, true, true);
+  try {
+    const counter = await solvePow(challenge.params as Record<string, unknown>, useWorker, signal);
+    injectToken(field, pack(challenge.token, String(counter)), form);
+    setState(el, 'solved');
+    setStatusLabel(el, 'Verified');
+    lockCheckbox(el, true, true);
+    el.dispatchEvent(new CustomEvent('turing:solved', { bubbles: true }));
+  } catch (error: unknown) {
+    markError(el, error);
+    throw error;
+  }
+}
+
+/**
+ * Interactive PoW panel: checkbox + status. Checking the box starts the solve.
+ * Structure only (no inline styles) so strict CSP stays happy.
+ */
+function renderPowIdle(
+  el: HTMLElement,
+  form: HTMLElement,
+  field: string,
+  challenge: Challenge,
+  useWorker: boolean,
+  signal?: AbortSignal,
+): void {
+  el.replaceChildren();
+  setState(el, 'idle');
+
+  const widget = document.createElement('div');
+  widget.setAttribute('data-turing-widget', '');
+
+  const label = document.createElement('label');
+  label.setAttribute('data-turing-label', '');
+
+  const check = document.createElement('input');
+  check.type = 'checkbox';
+  check.setAttribute('data-turing-check', '');
+  check.setAttribute('aria-label', 'Verify you are human');
+
+  const status = document.createElement('span');
+  status.setAttribute('data-turing-status', '');
+  status.textContent = "I'm not a robot";
+
+  label.append(check, status);
+  widget.appendChild(label);
+  el.appendChild(widget);
+
+  let running = false;
+  check.addEventListener('change', () => {
+    if (!check.checked || running) {
+      // Do not allow unchecking after start; restore checked if they try mid-solve.
+      if (running) check.checked = true;
+      return;
+    }
+    running = true;
+    void runPowSolve(el, form, field, challenge, useWorker, signal).catch(() => {
+      running = false;
+      // Offer retry: unlock checkbox, keep error state label until next attempt.
+      const retry = el.querySelector<HTMLInputElement>('[data-turing-check]');
+      if (retry) {
+        retry.disabled = false;
+        retry.checked = false;
+      }
+      // Re-bind is unnecessary; change handler stays. Re-fetch a fresh challenge
+      // on retry so a spent/expired token cannot be reused after a failed attempt.
+      void fetchChallenge(
+        el.getAttribute('data-turing-url') as string,
+        el.getAttribute('data-turing-type') ?? undefined,
+      ).then((fresh) => {
+        if (fresh.type === 'pow' && fresh.params) {
+          Object.assign(challenge, fresh);
+          setState(el, 'idle');
+          setStatusLabel(el, "I'm not a robot");
+        }
+      }).catch(() => {
+        /* keep error label from markError */
+      });
     });
   });
 }
@@ -119,9 +208,56 @@ function renderImageChallenge(el: HTMLElement, form: HTMLElement, field: string,
   const input = document.createElement('input');
   input.type = 'text';
   input.setAttribute('data-turing-input', '');
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('autocapitalize', 'characters');
+  input.setAttribute('spellcheck', 'false');
+  input.setAttribute('aria-label', 'Captcha answer');
   el.appendChild(input);
 
   input.addEventListener('input', () => {
     injectToken(field, pack(challenge.token, input.value), form);
+    // Emit solved when the user has typed something; server still validates.
+    if (input.value.length > 0) {
+      el.dispatchEvent(new CustomEvent('turing:solved', { bubbles: true }));
+    }
   });
+}
+
+function setState(el: HTMLElement, state: string): void {
+  el.setAttribute('data-turing-state', state);
+}
+
+/**
+ * Ensure a [data-turing-status] node exists and set its text. Builds a minimal
+ * widget shell when the status span is missing (e.g. first loading paint).
+ */
+function setStatusLabel(el: HTMLElement, label: string): void {
+  let status = el.querySelector<HTMLElement>('[data-turing-status]');
+  if (!status) {
+    el.replaceChildren();
+    const widget = document.createElement('div');
+    widget.setAttribute('data-turing-widget', '');
+    const wrap = document.createElement('label');
+    wrap.setAttribute('data-turing-label', '');
+    status = document.createElement('span');
+    status.setAttribute('data-turing-status', '');
+    wrap.appendChild(status);
+    widget.appendChild(wrap);
+    el.appendChild(widget);
+  }
+  status.textContent = label;
+}
+
+function lockCheckbox(el: HTMLElement, checked: boolean, disabled: boolean): void {
+  const check = el.querySelector<HTMLInputElement>('[data-turing-check]');
+  if (!check) return;
+  check.checked = checked;
+  check.disabled = disabled;
+}
+
+function markError(el: HTMLElement, error: unknown): void {
+  setState(el, 'error');
+  setStatusLabel(el, 'Verification failed — try again');
+  lockCheckbox(el, false, false);
+  el.dispatchEvent(new CustomEvent('turing:error', { bubbles: true, detail: { error } }));
 }

@@ -18,7 +18,7 @@ final class TuringManagerTest extends TestCase
         $manager = $this->app->make(TuringManager::class);
         $ch = $manager->challenge();
         self::assertInstanceOf(Challenge::class, $ch);
-        self::assertSame('math', $ch->type);
+        self::assertSame('pow', $ch->type);
         self::assertNotEmpty($ch->token);
     }
 

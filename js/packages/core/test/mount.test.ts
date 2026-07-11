@@ -26,21 +26,34 @@ async function powChallenge(target: number) {
   };
 }
 
+function powMountEl(attrs: Record<string, string> = {}): { form: HTMLFormElement; el: HTMLDivElement } {
+  const form = document.createElement('form');
+  const el = document.createElement('div');
+  el.setAttribute('data-turing', '');
+  el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
+  el.setAttribute('data-turing-type', 'pow');
+  el.setAttribute('data-turing-field', 'turing_token');
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  form.appendChild(el);
+  document.body.appendChild(form);
+  return { form, el };
+}
+
 describe('mount (pow)', () => {
-  it('solves the counter and injects the packed token', async () => {
+  it('interactive: checkbox starts solve, injects token, emits turing:solved', async () => {
     const challenge = await powChallenge(4);
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(challenge), { status: 200 }));
-
-    const form = document.createElement('form');
-    const el = document.createElement('div');
-    el.setAttribute('data-turing', '');
-    el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
-    el.setAttribute('data-turing-type', 'pow');
-    el.setAttribute('data-turing-field', 'turing_token');
-    form.appendChild(el);
-    document.body.appendChild(form);
+    const { form, el } = powMountEl({ 'data-turing-no-worker': '' });
 
     await mount(el);
+    expect(el.getAttribute('data-turing-state')).toBe('idle');
+    expect(el.querySelector('[data-turing-check]')).not.toBeNull();
+
+    const solved = new Promise<void>((r) => el.addEventListener('turing:solved', () => r(), { once: true }));
+    const check = el.querySelector<HTMLInputElement>('[data-turing-check]')!;
+    check.checked = true;
+    check.dispatchEvent(new Event('change'));
+    await solved;
 
     const input = form.querySelector<HTMLInputElement>('input[name="turing_token"]');
     expect(input).not.toBeNull();
@@ -51,23 +64,16 @@ describe('mount (pow)', () => {
     vi.restoreAllMocks();
   });
 
-  it('routes through solveInWorker when data-turing-worker is present (inline fallback with no Worker)', async () => {
-    expect(typeof (globalThis as unknown as { Worker?: unknown }).Worker).toBe('undefined');
+  it('autostart: solves immediately without a click', async () => {
     const challenge = await powChallenge(4);
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(challenge), { status: 200 }));
-    const worker = vi.spyOn(solveModule, 'solveInWorker');
-
-    const form = document.createElement('form');
-    const el = document.createElement('div');
-    el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
-    el.setAttribute('data-turing-type', 'pow');
-    el.setAttribute('data-turing-worker', '');
-    form.appendChild(el);
-    document.body.appendChild(form);
+    const { form, el } = powMountEl({
+      'data-turing-autostart': '',
+      'data-turing-no-worker': '',
+    });
 
     await mount(el);
 
-    expect(worker).toHaveBeenCalledWith('PBKDF2-SHA256', expect.anything(), expect.anything());
     const input = form.querySelector<HTMLInputElement>('input[name="turing_token"]');
     const unpacked = JSON.parse(new TextDecoder().decode(base64UrlDecode(input!.value)));
     expect(unpacked).toEqual({ t: 'server-token', a: '4' });
@@ -75,17 +81,28 @@ describe('mount (pow)', () => {
     vi.restoreAllMocks();
   });
 
-  it('does not use the worker path when data-turing-worker is absent', async () => {
+  it('uses solveInWorker by default (inline fallback when Worker is missing)', async () => {
+    expect(typeof (globalThis as unknown as { Worker?: unknown }).Worker).toBe('undefined');
     const challenge = await powChallenge(4);
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(challenge), { status: 200 }));
     const worker = vi.spyOn(solveModule, 'solveInWorker');
+    const { el } = powMountEl({ 'data-turing-autostart': '' });
 
-    const form = document.createElement('form');
-    const el = document.createElement('div');
-    el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
-    el.setAttribute('data-turing-type', 'pow');
-    form.appendChild(el);
-    document.body.appendChild(form);
+    await mount(el);
+
+    expect(worker).toHaveBeenCalledWith('PBKDF2-SHA256', expect.anything(), expect.anything());
+    expect(el.getAttribute('data-turing-state')).toBe('solved');
+    vi.restoreAllMocks();
+  });
+
+  it('skips the worker when data-turing-no-worker is set', async () => {
+    const challenge = await powChallenge(4);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(challenge), { status: 200 }));
+    const worker = vi.spyOn(solveModule, 'solveInWorker');
+    const { el } = powMountEl({
+      'data-turing-autostart': '',
+      'data-turing-no-worker': '',
+    });
 
     await mount(el);
 
@@ -114,6 +131,7 @@ describe('mount (math)', () => {
     await mount(el);
 
     expect(el.querySelector('svg')).not.toBeNull();
+    expect(el.getAttribute('data-turing-state')).toBe('ready');
     const userInput = el.querySelector<HTMLInputElement>('input[data-turing-input]')!;
     userInput.value = '8';
     userInput.dispatchEvent(new Event('input'));
@@ -166,6 +184,7 @@ describe('autoMount error handling', () => {
     el.setAttribute('data-turing', '');
     el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
     el.setAttribute('data-turing-type', 'pow');
+    el.setAttribute('data-turing-autostart', '');
     form.appendChild(el);
     document.body.appendChild(form);
 
