@@ -97,7 +97,7 @@ fields (e.g. `keySignature`) are always base64url of the raw bytes.
 
 ```bash
 composer install
-vendor/bin/phpunit                 # PHP: Core + Laravel suites (Laravel 10/11/12 in CI)
+vendor/bin/phpunit                 # PHP: Core + Laravel suites (Laravel 10–13 in CI)
 
 cd js && pnpm install
 pnpm -r build && pnpm -r test      # JS: 4 packages (build before test)

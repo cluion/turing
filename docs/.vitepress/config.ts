@@ -27,6 +27,7 @@ export default defineConfig({
             text: 'Guide',
             items: [
               { text: 'Laravel', link: '/guide/laravel' },
+              { text: 'Migrating', link: '/guide/migrating' },
               { text: 'Plain HTML', link: '/guide/plain-html' },
               { text: 'Vue', link: '/guide/vue' },
               { text: 'React', link: '/guide/react' },
@@ -58,6 +59,7 @@ export default defineConfig({
             text: '指南',
             items: [
               { text: 'Laravel', link: '/zh/guide/laravel' },
+              { text: '遷移指南', link: '/zh/guide/migrating' },
               { text: '純 HTML', link: '/zh/guide/plain-html' },
               { text: 'Vue', link: '/zh/guide/vue' },
               { text: 'React', link: '/zh/guide/react' },

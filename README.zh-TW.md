@@ -94,7 +94,7 @@ JSON。預設 HMAC-SHA256 簽章(Ed25519 選用)。Challenge 類型:`math`、`te
 
 ```bash
 composer install
-vendor/bin/phpunit                 # PHP:Core + Laravel 測試(CI 跑 Laravel 10/11/12)
+vendor/bin/phpunit                 # PHP:Core + Laravel 測試(CI 跑 Laravel 10–13)
 
 cd js && pnpm install
 pnpm -r build && pnpm -r test      # JS:4 個套件(先 build 再 test)

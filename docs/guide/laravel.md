@@ -81,3 +81,11 @@ cache the app already uses.
 
 A full runnable example lives in [`workbench/`](https://github.com/cluion/turing)
 (`vendor/bin/testbench serve`, then visit `/captcha-demo`).
+
+Replacing an older image/session captcha? See [Migrating](/guide/migrating).
+
+## Supported Laravel versions
+
+Turing’s Laravel integration targets **Laravel 10, 11, 12, and 13**
+(`illuminate/support` `^10 || ^11 || ^12 || ^13`). CI runs the PHPUnit suite on
+each major.
