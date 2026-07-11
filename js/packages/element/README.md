@@ -23,7 +23,7 @@ swap the script:
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/npm/@cluion/turing-element@0.3.1/dist/turing-element.global.js"
+  src="https://cdn.jsdelivr.net/npm/@cluion/turing-element@1.0.0/dist/turing-element.global.js"
   integrity="sha384-OL3SW2nGSpQqiIih9J5bgCedQ3OgVgyoPRiecnfnkb6gBZleFCm5p0rikWcGtaAX"
   crossorigin="anonymous"
   defer></script>
