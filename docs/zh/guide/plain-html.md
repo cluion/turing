@@ -8,8 +8,8 @@ pin 明確版本並加上 Subresource Integrity,避免 CDN 被動手腳把 scrip
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.0/dist/turing.global.js"
-  integrity="sha384-CUAGKKDGZDcu6hnrOgnpoNw7eLOC9QTfaUAeLTI4OoN+Xnb2kgGacoBZQkELpCy0"
+  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.1/dist/turing.global.js"
+  integrity="sha384-0WKVmXwyonAwsqfst4Ajw1TMbWhEI9qBiHDjQX84v82Hl/gby8ZTNH+NKlKMtqse"
   crossorigin="anonymous"
   defer></script>
 
@@ -27,7 +27,7 @@ pin 明確版本並加上 Subresource Integrity,避免 CDN 被動手腳把 scrip
 發布後產生 `sha384` 雜湊:
 
 ```bash
-curl -s https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.0/dist/turing.global.js \
+curl -s https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.1.1/dist/turing.global.js \
   | openssl dgst -sha384 -binary | openssl base64 -A | sed 's/^/sha384-/'
 ```
 
