@@ -18,10 +18,25 @@ php artisan vendor:publish --tag=turing-config
 ```dotenv
 # .env —— 必填;token 用它簽章。
 TURING_SECRET=change-me-to-a-long-random-string
+
+# 可選 PoW 難度：interactive | balanced | strict
+# TURING_POW_PROFILE=balanced
 ```
 
 service provider 會自動註冊具名的 challenge 路由(`turing.challenge`,位於
 `/turing/challenge`)、`turing` 驗證器,以及 `<x-turing>` 元件。
+
+## PoW 難度 profiles
+
+用命名檔位，不必手調 `cost` / `maxcounter`。在 `config/turing.php` 的 `types.pow` 或 env `TURING_POW_PROFILE`：
+
+| Profile | cost | maxcounter | 適用 |
+|---------|------|------------|------|
+| `interactive` | 1000 | 2500 | 一般表單、要快 |
+| `balanced` | 5000 | 10000 | 預設 |
+| `strict` | 15000 | 25000 | 註冊／敏感操作 |
+
+明確設定的 `cost` / `maxcounter` 會蓋過 profile。未知名稱退回 `balanced`。
 
 ## 渲染 widget
 

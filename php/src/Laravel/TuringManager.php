@@ -92,7 +92,7 @@ final class TuringManager
         ];
 
         $config = new Config(
-            defaultType: (string) ($this->config['default'] ?? 'math'),
+            defaultType: (string) ($this->config['default'] ?? 'pow'),
             types: (array) ($this->config['types'] ?? []),
             now: static fn (): int => time(),
         );

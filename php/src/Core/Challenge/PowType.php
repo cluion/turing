@@ -6,6 +6,7 @@ namespace Cluion\Turing\Core\Challenge;
 use Cluion\Turing\Core\Exception\PowAlgorithmUnsupported;
 use Cluion\Turing\Core\KeyRing;
 use Cluion\Turing\Core\Pow\Pbkdf2Solver;
+use Cluion\Turing\Core\Pow\PowProfile;
 use Cluion\Turing\Core\Pow\PowSolver;
 use Cluion\Turing\Core\Pow\ShaBitSolver;
 use Cluion\Turing\Core\Token\TokenEncoder;
@@ -35,6 +36,8 @@ final class PowType implements ChallengeType
      */
     public function issue(array $typeConfig, KeyRing $ring, int $now): Challenge
     {
+        // Named bands (interactive / balanced / strict); explicit cost etc. still win.
+        $typeConfig = PowProfile::apply($typeConfig);
         $algorithm = $typeConfig['algorithm'] ?? 'PBKDF2-SHA256';
         $salt = TokenEncoder::base64UrlEncode(random_bytes(16));
         $nonce = TokenEncoder::base64UrlEncode(random_bytes(16));

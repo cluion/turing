@@ -17,7 +17,17 @@ return [
     'types' => [
         'math' => ['expire' => 120],
         'text' => ['expire' => 120, 'length' => 5],
-        'pow'  => ['algorithm' => 'PBKDF2-SHA256', 'cost' => 5000, 'maxcounter' => 10000, 'expire' => 120],
+        'pow' => [
+            'algorithm' => 'PBKDF2-SHA256',
+            // Difficulty band: interactive | balanced | strict
+            // See Cluion\Turing\Core\Pow\PowProfile for numeric defaults.
+            'profile' => env('TURING_POW_PROFILE', 'balanced'),
+            'expire' => 120,
+            // Optional hard overrides (win over profile):
+            // 'cost' => 5000,
+            // 'maxcounter' => 10000,
+            // 'difficulty_bits' => 20, // only when algorithm is SHA-256
+        ],
     ],
 
     // Single-use store: 'cache' (Laravel cache, default) or 'null' (stateless).

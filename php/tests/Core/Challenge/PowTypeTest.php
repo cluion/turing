@@ -79,6 +79,20 @@ final class PowTypeTest extends TestCase
     }
 
     /**
+     * A named profile supplies cost when the integrator does not set one.
+     */
+    public function test_issue_uses_profile_defaults(): void
+    {
+        $type = new PowType();
+        $ch = $type->issue(
+            ['algorithm' => 'PBKDF2-SHA256', 'profile' => 'interactive', 'expire' => 120],
+            $this->ring(),
+            now: 1000
+        );
+        self::assertSame(1000, $ch->params['cost']);
+    }
+
+    /**
      * solverFor returns the matching solver for each supported algorithm.
      */
     public function test_solver_for_returns_matching_solver(): void

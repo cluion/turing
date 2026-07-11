@@ -19,10 +19,27 @@ php artisan vendor:publish --tag=turing-config
 ```dotenv
 # .env — required; tokens are signed with this.
 TURING_SECRET=change-me-to-a-long-random-string
+
+# Optional PoW difficulty band: interactive | balanced | strict
+# TURING_POW_PROFILE=balanced
 ```
 
 The service provider auto-registers a named challenge route (`turing.challenge`
 at `/turing/challenge`), the `turing` validator, and the `<x-turing>` component.
+
+## PoW difficulty profiles
+
+Pick a named band instead of hand-tuning `cost` / `maxcounter`. Configure in
+`config/turing.php` under `types.pow` (or `TURING_POW_PROFILE`):
+
+| Profile | cost | maxcounter | Use when |
+|---------|------|------------|----------|
+| `interactive` | 1000 | 2500 | Fast forms; low-end phones |
+| `balanced` | 5000 | 10000 | Default / general |
+| `strict` | 15000 | 25000 | Register / sensitive actions |
+
+Explicit `cost` / `maxcounter` in config still override the profile. Unknown
+profile names fall back to `balanced`.
 
 ## Render the widget
 
