@@ -10,7 +10,7 @@ swap the script:
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.2.0/dist/turing.global.js"
+  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.3.0/dist/turing.global.js"
   integrity="sha384-mnsCwwvqQfqd7zQDpBAmT0Gj0sUWwYxYjmONH7/kiDmAZEvlg03ujfhxPqCUEFRV"
   crossorigin="anonymous"
   defer></script>
@@ -29,7 +29,7 @@ enclosing `<form>`. `window.Turing.mount(el)` is available for manual control.
 Generate the `sha384` hash after publishing:
 
 ```bash
-curl -s https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.2.0/dist/turing.global.js \
+curl -s https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.3.0/dist/turing.global.js \
   | openssl dgst -sha384 -binary | openssl base64 -A | sed 's/^/sha384-/'
 ```
 

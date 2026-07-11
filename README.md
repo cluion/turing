@@ -38,7 +38,7 @@ Plain HTML via CDN — pin an exact version and add Subresource Integrity:
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.2.0/dist/turing.global.js"
+  src="https://cdn.jsdelivr.net/npm/@cluion/turing-core@0.3.0/dist/turing.global.js"
   integrity="sha384-mnsCwwvqQfqd7zQDpBAmT0Gj0sUWwYxYjmONH7/kiDmAZEvlg03ujfhxPqCUEFRV"
   crossorigin="anonymous"
   defer></script>
