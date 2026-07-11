@@ -1,6 +1,6 @@
 {
   "name": "@cluion/turing-element",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "<turing-captcha> custom element for the Turing captcha.",
   "license": "MIT",
   "type": "module",
