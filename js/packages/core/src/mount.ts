@@ -32,18 +32,35 @@ export async function mount(el: HTMLElement, opts: MountOptions = {}): Promise<v
   }
   const form = enclosingForm ?? el;
 
+  el.setAttribute('data-turing-state', 'loading');
   const challenge = await fetchChallenge(url, type);
 
   if (challenge.type === 'pow' && challenge.params) {
+    // PoW has no image — surface progress so the mount is not an empty box.
+    setStatus(el, 'solving', 'Verifying…');
     const counter = await solvePow(challenge.params, useWorker, opts.signal);
     injectToken(field, pack(challenge.token, String(counter)), form as HTMLElement);
-    el.setAttribute('data-turing-state', 'solved');
+    setStatus(el, 'solved', 'Verified');
     return;
   }
 
   if (challenge.image) {
     renderImageChallenge(el, form as HTMLElement, field, challenge);
+    el.setAttribute('data-turing-state', 'ready');
   }
+}
+
+/**
+ * Replace the container contents with a short status line and stamp
+ * data-turing-state so host CSS can style solving / solved / error.
+ */
+function setStatus(el: HTMLElement, state: string, label: string): void {
+  el.setAttribute('data-turing-state', state);
+  el.replaceChildren();
+  const status = document.createElement('span');
+  status.setAttribute('data-turing-status', '');
+  status.textContent = label;
+  el.appendChild(status);
 }
 
 /**

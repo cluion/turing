@@ -4,59 +4,81 @@ declare(strict_types=1);
 namespace Cluion\Turing\Core\Image;
 
 /**
- * Zero-extension SVG renderer. Each character is drawn as a transformed shape
- * (rotated/skewed) so the answer is not present as text nodes. Random noise
- * polylines add OCR friction. The current per-char shape is a stylized skeleton
- * (a rectangle plus a dot); swapping in real glyph paths is a later refinement
- * and does not affect the CSP-safe, no-<text> guarantee.
+ * Zero-extension SVG renderer. Each character is drawn as a rotated/jittered
+ * <text> glyph (readable by humans) plus noise lines for light OCR friction.
+ * Glyph outlines as pure shapes remain a later refinement; v1 prioritises a
+ * captcha a person can actually solve over anti-scrape purity.
  */
 final class SvgRenderer implements ImageRenderer
 {
     /**
-     * Draw each character as a rotated skeleton plus noise lines, wrapped in
-     * an <svg> element sized to the requested width and height.
+     * Draw each character as distorted SVG text plus noise, wrapped in an
+     * <svg> element. Width expands when the string is longer than the default
+     * canvas can hold (e.g. math expressions like "9 + 8").
      */
     public function render(string $text, int $width = 120, int $height = 36): string
     {
-        $len = strlen($text);
-        $charW = intdiv($width, max(1, $len));
-        $paths = '';
-        for ($i = 0; $i < $len; $i++) {
-            $x = $i * $charW + (int) ($charW * 0.2);
+        $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
+        if ($chars === false) {
+            $chars = str_split($text);
+        }
+        $len = max(1, count($chars));
+        $charW = 22;
+        $canvasW = max($width, $len * $charW + 8);
+        $fontSize = max(16, $height - 12);
+
+        $glyphs = '';
+        $i = 0;
+        foreach ($chars as $ch) {
+            $x = 6 + $i * $charW;
+            $i++;
+            // Spaces advance the cursor but draw nothing.
+            if ($ch === ' ') {
+                continue;
+            }
             $rot = random_int(-18, 18);
-            $dy = random_int(-2, 2);
-            // Per-char rotation/skew defeats naive segmentation; the shape itself
-            // carries no letter information (no <text> node to scrape).
-            $paths .= sprintf(
-                '<g transform="translate(%d,%d) rotate(%d)"><rect x="2" y="6" width="%d" height="%d" rx="3" fill="none" stroke="#222" stroke-width="2"/><circle cx="%d" cy="%d" r="3" fill="#222"/></g>',
+            $dy = random_int(-3, 3);
+            $y = (int) ($height * 0.72) + $dy;
+            $glyphs .= sprintf(
+                '<text x="%d" y="%d" transform="rotate(%d %d %d)" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="%d" font-weight="700" fill="#1a1a1a">%s</text>',
                 $x,
-                $dy,
+                $y,
                 $rot,
-                $charW - 6,
-                $height - 16,
-                intdiv($charW, 2),
-                10
+                $x,
+                $y,
+                $fontSize,
+                $this->escape($ch),
             );
         }
-        // A few random polylines as background noise.
+
         $noise = '';
-        for ($n = 0; $n < 4; $n++) {
+        for ($n = 0; $n < 5; $n++) {
             $noise .= sprintf(
-                '<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#888" stroke-width="1"/>',
-                random_int(0, $width),
+                '<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#999" stroke-width="1" opacity="0.7"/>',
+                random_int(0, $canvasW),
                 random_int(0, $height),
-                random_int(0, $width),
-                random_int(0, $height)
+                random_int(0, $canvasW),
+                random_int(0, $height),
             );
         }
+
+        // Opaque light background so dark glyphs stay readable on dark pages.
         return sprintf(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d" role="img" aria-label="captcha">%s%s</svg>',
-            $width,
+            '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d" role="img" aria-label="captcha"><rect width="100%%" height="100%%" fill="#f4f4f5"/>%s%s</svg>',
+            $canvasW,
             $height,
-            $width,
+            $canvasW,
             $height,
-            $paths,
-            $noise
+            $glyphs,
+            $noise,
         );
+    }
+
+    /**
+     * Escape a single character for safe inclusion in SVG/XML text content.
+     */
+    private function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 }

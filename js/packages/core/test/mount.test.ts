@@ -46,6 +46,8 @@ describe('mount (pow)', () => {
     expect(input).not.toBeNull();
     const unpacked = JSON.parse(new TextDecoder().decode(base64UrlDecode(input!.value)));
     expect(unpacked).toEqual({ t: 'server-token', a: '4' });
+    expect(el.getAttribute('data-turing-state')).toBe('solved');
+    expect(el.querySelector('[data-turing-status]')?.textContent).toBe('Verified');
     vi.restoreAllMocks();
   });
 
