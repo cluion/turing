@@ -42,6 +42,8 @@ final class TuringComponent extends Component
         public ?string $labelSolved = null,
         public ?string $labelError = null,
         public ?string $labelAria = null,
+        public ?string $labelRefresh = null,
+        public bool $noRefresh = false,
     ) {
     }
 
@@ -65,6 +67,9 @@ final class TuringComponent extends Component
         if ($this->noWorker) {
             $attrs['data-turing-no-worker'] = true;
         }
+        if ($this->noRefresh) {
+            $attrs['data-turing-no-refresh'] = true;
+        }
 
         $labelMap = [
             'data-turing-label' => $this->label,
@@ -74,6 +79,7 @@ final class TuringComponent extends Component
             'data-turing-label-solved' => $this->labelSolved,
             'data-turing-label-error' => $this->labelError,
             'data-turing-label-aria' => $this->labelAria,
+            'data-turing-label-refresh' => $this->labelRefresh,
         ];
         foreach ($labelMap as $name => $value) {
             if ($value !== null && $value !== '') {

@@ -9,6 +9,7 @@ const LABEL_ATTRS = [
   ['label-solved', 'data-turing-label-solved'],
   ['label-error', 'data-turing-label-error'],
   ['label-aria', 'data-turing-label-aria'],
+  ['label-refresh', 'data-turing-label-refresh'],
 ] as const;
 
 /**
@@ -79,6 +80,11 @@ export class TuringCaptchaElement extends HTMLElement {
       container.setAttribute('data-turing-no-worker', '');
     } else {
       container.removeAttribute('data-turing-no-worker');
+    }
+    if (this.hasAttribute('no-refresh')) {
+      container.setAttribute('data-turing-no-refresh', '');
+    } else {
+      container.removeAttribute('data-turing-no-refresh');
     }
 
     for (const [hostAttr, dataAttr] of LABEL_ATTRS) {

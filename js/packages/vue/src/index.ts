@@ -21,6 +21,8 @@ export default defineComponent({
     labelSolved: { type: String, default: undefined },
     labelError: { type: String, default: undefined },
     labelAria: { type: String, default: undefined },
+    labelRefresh: { type: String, default: undefined },
+    noRefresh: { type: Boolean, default: false },
   },
   emits: ['solved', 'error', 'ready'],
   setup(props, { emit }) {
@@ -47,6 +49,8 @@ export default defineComponent({
       if (props.labelSolved) attrs['label-solved'] = props.labelSolved;
       if (props.labelError) attrs['label-error'] = props.labelError;
       if (props.labelAria) attrs['label-aria'] = props.labelAria;
+      if (props.labelRefresh) attrs['label-refresh'] = props.labelRefresh;
+      if (props.noRefresh) attrs['no-refresh'] = '';
       return h('turing-captcha', { ref: root, ...attrs });
     };
   },

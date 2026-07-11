@@ -29,6 +29,8 @@ the Web Component emit these for you.
 | `data-turing-label-solved` | `Verified` | Success. |
 | `data-turing-label-error` | `Verification failed — try again` | Failure. |
 | `data-turing-label-aria` | `Verify you are human` | Checkbox `aria-label`. |
+| `data-turing-label-refresh` | `Refresh` | Math/text refresh button. |
+| `data-turing-no-refresh` | — | Hide the math/text refresh control. |
 
 State is reflected on `data-turing-state`:
 

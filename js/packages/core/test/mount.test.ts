@@ -154,6 +154,7 @@ describe('mount (math)', () => {
     await mount(el);
 
     expect(el.querySelector('svg')).not.toBeNull();
+    expect(el.querySelector('[data-turing-refresh]')).not.toBeNull();
     expect(el.getAttribute('data-turing-state')).toBe('ready');
     const userInput = el.querySelector<HTMLInputElement>('input[data-turing-input]')!;
     userInput.value = '8';
@@ -162,6 +163,48 @@ describe('mount (math)', () => {
     const hidden = form.querySelector<HTMLInputElement>('input[name="turing_token"]');
     const unpacked = JSON.parse(new TextDecoder().decode(base64UrlDecode(hidden!.value)));
     expect(unpacked).toEqual({ t: 'tok', a: '8' });
+    vi.restoreAllMocks();
+  });
+
+  it('refresh re-fetches the challenge and clears the packed token', async () => {
+    const first = {
+      token: 'tok1',
+      image: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" data-id="1"></svg>',
+      params: null,
+      type: 'math',
+      expires: 1,
+    };
+    const second = {
+      token: 'tok2',
+      image: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" data-id="2"></svg>',
+      params: null,
+      type: 'math',
+      expires: 1,
+    };
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify(first), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(second), { status: 200 }));
+
+    const form = document.createElement('form');
+    const el = document.createElement('div');
+    el.setAttribute('data-turing-url', 'http://localhost/turing/challenge');
+    el.setAttribute('data-turing-type', 'math');
+    form.appendChild(el);
+    document.body.appendChild(form);
+
+    await mount(el);
+    const input = el.querySelector<HTMLInputElement>('input[data-turing-input]')!;
+    input.value = '9';
+    input.dispatchEvent(new Event('input'));
+    expect(form.querySelector<HTMLInputElement>('input[name="turing_token"]')!.value).not.toBe('');
+
+    el.querySelector<HTMLButtonElement>('[data-turing-refresh]')!.click();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(form.querySelector<HTMLInputElement>('input[name="turing_token"]')!.value).toBe('');
+    expect(el.getAttribute('data-turing-state')).toBe('ready');
     vi.restoreAllMocks();
   });
 

@@ -3,9 +3,13 @@ declare(strict_types=1);
 
 namespace Cluion\Turing\Tests\Laravel;
 
+use Cluion\Turing\Core\Exception\AlreadyUsed;
+use Cluion\Turing\Core\Exception\TokenExpired;
+use Cluion\Turing\Core\Exception\TokenInvalid;
 use Cluion\Turing\Core\Pow\Pbkdf2Solver;
 use Cluion\Turing\Core\Token\TokenEncoder;
 use Cluion\Turing\Laravel\TuringManager;
+use Cluion\Turing\Laravel\Validation\TuringValidator;
 use Illuminate\Support\Facades\Validator;
 
 final class TuringValidatorTest extends TestCase
@@ -57,5 +61,15 @@ final class TuringValidatorTest extends TestCase
     {
         $validator = Validator::make(['turing_token' => '@@@bad@@@'], ['turing_token' => 'turing']);
         self::assertTrue($validator->fails());
+    }
+
+    /**
+     * Stable log codes map structural exceptions for metrics without user leak.
+     */
+    public function test_failure_codes_are_stable(): void
+    {
+        self::assertSame('expired', TuringValidator::codeFor(new TokenExpired('x')));
+        self::assertSame('already_used', TuringValidator::codeFor(new AlreadyUsed('x')));
+        self::assertSame('invalid', TuringValidator::codeFor(new TokenInvalid('x')));
     }
 }

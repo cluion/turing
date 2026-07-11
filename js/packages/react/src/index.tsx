@@ -18,6 +18,8 @@ export interface TuringProps {
   labelSolved?: string;
   labelError?: string;
   labelAria?: string;
+  labelRefresh?: string;
+  noRefresh?: boolean;
   onSolved?: () => void;
   onError?: (error: unknown) => void;
   onReady?: () => void;
@@ -40,6 +42,8 @@ export function Turing({
   labelSolved,
   labelError,
   labelAria,
+  labelRefresh,
+  noRefresh,
   onSolved,
   onError,
   onReady,
@@ -74,5 +78,7 @@ export function Turing({
     ...(labelSolved ? { 'label-solved': labelSolved } : {}),
     ...(labelError ? { 'label-error': labelError } : {}),
     ...(labelAria ? { 'label-aria': labelAria } : {}),
+    ...(labelRefresh ? { 'label-refresh': labelRefresh } : {}),
+    ...(noRefresh ? { 'no-refresh': '' } : {}),
   });
 }

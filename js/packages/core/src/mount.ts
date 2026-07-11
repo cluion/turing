@@ -17,6 +17,8 @@ export interface TuringLabels {
   error: string;
   /** Accessible name for the checkbox. */
   aria: string;
+  /** Math/text refresh control. */
+  refresh: string;
 }
 
 export const DEFAULT_LABELS: TuringLabels = {
@@ -26,6 +28,7 @@ export const DEFAULT_LABELS: TuringLabels = {
   solved: 'Verified',
   error: 'Verification failed — try again',
   aria: 'Verify you are human',
+  refresh: 'Refresh',
 };
 
 /**
@@ -49,6 +52,7 @@ export function readLabels(el: HTMLElement): TuringLabels {
     solved: pick('solved', 'data-turing-label-solved'),
     error: pick('error', 'data-turing-label-error'),
     aria: pick('aria', 'data-turing-label-aria'),
+    refresh: pick('refresh', 'data-turing-label-refresh'),
   };
 }
 
@@ -98,9 +102,7 @@ export async function mount(el: HTMLElement, opts: MountOptions = {}): Promise<v
   }
 
   if (challenge.image) {
-    renderImageChallenge(el, form as HTMLElement, field, challenge);
-    setState(el, 'ready');
-    el.dispatchEvent(new CustomEvent('turing:ready', { bubbles: true }));
+    paintImageChallenge(el, form as HTMLElement, field, challenge, labels, type);
   }
 }
 
@@ -238,21 +240,73 @@ function solvePow(params: Record<string, unknown>, useWorker: boolean, signal?: 
 }
 
 /**
- * Render the SVG image (via DOMParser, never innerHTML) and inject the packed
- * token whenever the user types an answer. The markup is parsed as text/html so
- * the HTML parser handles the inline SVG as foreign content, then the node is
- * imported into this document and appended -- no innerHTML string assignment,
- * so Trusted Types and strict CSP stay satisfied.
+ * Paint an image challenge (with optional refresh) and mark ready.
  */
-function renderImageChallenge(el: HTMLElement, form: HTMLElement, field: string, challenge: Challenge): void {
+function paintImageChallenge(
+  el: HTMLElement,
+  form: HTMLElement,
+  field: string,
+  challenge: Challenge,
+  labels: TuringLabels,
+  type: string | undefined,
+): void {
+  renderImageShell(el, form, field, challenge, labels, () => {
+    const url = el.getAttribute('data-turing-url');
+    if (!url) return;
+    setState(el, 'loading');
+    setStatusLabel(el, labels.loading);
+    clearPackedToken(field, form);
+    void fetchChallenge(url, type ?? challenge.type)
+      .then((fresh) => {
+        if (!fresh.image) {
+          markError(el, new Error('refresh did not return an image challenge'), labels);
+          return;
+        }
+        paintImageChallenge(el, form, field, fresh, labels, type);
+      })
+      .catch((error: unknown) => markError(el, error, labels));
+  });
+  setState(el, 'ready');
+  el.dispatchEvent(new CustomEvent('turing:ready', { bubbles: true }));
+}
+
+/**
+ * Render the SVG image (via DOMParser, never innerHTML) plus answer input and
+ * optional refresh control. No innerHTML — Trusted Types / strict CSP safe.
+ */
+function renderImageShell(
+  el: HTMLElement,
+  form: HTMLElement,
+  field: string,
+  challenge: Challenge,
+  labels: TuringLabels,
+  onRefresh: () => void,
+): void {
   el.replaceChildren();
+  const row = document.createElement('div');
+  row.setAttribute('data-turing-image-row', '');
+
   const parsed = new DOMParser().parseFromString(challenge.image as string, 'text/html');
   const svg = parsed.querySelector('svg');
   if (svg) {
     const imported = document.importNode(svg, true) as Element;
     sanitizeSvg(imported);
-    el.appendChild(imported);
+    row.appendChild(imported);
   }
+
+  if (!el.hasAttribute('data-turing-no-refresh')) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('data-turing-refresh', '');
+    btn.textContent = labels.refresh;
+    btn.setAttribute('aria-label', labels.refresh);
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      onRefresh();
+    });
+    row.appendChild(btn);
+  }
+  el.appendChild(row);
 
   const input = document.createElement('input');
   input.type = 'text';
@@ -265,11 +319,20 @@ function renderImageChallenge(el: HTMLElement, form: HTMLElement, field: string,
 
   input.addEventListener('input', () => {
     injectToken(field, pack(challenge.token, input.value), form);
-    // Emit solved when the user has typed something; server still validates.
     if (input.value.length > 0) {
       el.dispatchEvent(new CustomEvent('turing:solved', { bubbles: true }));
     }
   });
+}
+
+/** Clear a previously injected packed token after refresh. */
+function clearPackedToken(field: string, form: HTMLElement): void {
+  for (const candidate of Array.from(form.querySelectorAll<HTMLInputElement>('input'))) {
+    if (candidate.name === field) {
+      candidate.value = '';
+      break;
+    }
+  }
 }
 
 function setState(el: HTMLElement, state: string): void {
